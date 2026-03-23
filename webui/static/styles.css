@@ -1,0 +1,275 @@
+/* Stock Skills WebUI - Custom Styles */
+
+/* 追加スタイル */
+
+/* カードホバー効果 */
+.card-hover {
+    transition: all 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* テーブル行ホバー */
+.table tr.hover:hover {
+    background-color: rgba(var(--p), 0.1);
+}
+
+/* ローディングアニメーション */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* スクロールバーカスタマイズ */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.5);
+}
+
+/* 数値アニメーション */
+@keyframes count-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-count {
+    animation: count-up 0.5s ease-out;
+}
+
+/* バッジアニメーション */
+@keyframes bounce-in {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.badge-animate {
+    animation: bounce-in 0.3s ease-out;
+}
+
+/* フォーカスリング */
+.focus-ring:focus {
+    outline: 2px solid hsl(var(--p));
+    outline-offset: 2px;
+}
+
+/* プライマリーボタンホバー */
+.btn-primary-hover:hover {
+    filter: brightness(1.1);
+}
+
+/* テキストグラデーション */
+.text-gradient {
+    background: linear-gradient(135deg, hsl(var(--p)), hsl(var(--s)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* シャドウユーティリティ */
+.shadow-soft {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-medium {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* プリンティング */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* ダークモード対応 */
+[data-theme="dark"] .card {
+    background-color: hsl(var(--b2));
+}
+
+[data-theme="dark"] .table tr.hover:hover {
+    background-color: hsl(var(--b3));
+}
+
+/* アクセシビリティ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* トランジション */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ==================================
+   モバイルレスポンシブ
+   ================================== */
+
+@media (max-width: 768px) {
+    /* ナビゲーション */
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+    
+    /* コンテナパディング */
+    .main-content {
+        padding: 0.75rem;
+    }
+    
+    /* カードパディング */
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* テーブルスクロール */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* ボタンサイズ */
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* グリッド調整 */
+    .grid {
+        gap: 0.75rem;
+    }
+    
+    /* 統計カード */
+    .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .stat {
+        padding: 0.5rem;
+    }
+    
+    .stat-title {
+        font-size: 0.7rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+    
+    /* フォーム要素 */
+    .input, .select {
+        font-size: 16px; /* iOS ズーム防止 */
+    }
+    
+    /* テキストサイズ調整 */
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+}
+
+/* 小さいモバイル画面 */
+@media (max-width: 480px) {
+    .navbar-title {
+        font-size: 0.9rem;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        border-radius: 0.5rem;
+    }
+}
+
+/* タブレット */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ダークモードでのモバイル最適化 */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    .dropdown-content {
+        background-color: hsl(var(--b2));
+    }
+}

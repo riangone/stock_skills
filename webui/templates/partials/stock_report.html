@@ -1,0 +1,238 @@
+{# 個別銘柄レポートの HTMX パーシャル #}
+
+{% if report and report.success %}
+    <!-- 銘柄ヘッダー -->
+    <div class="mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h2 class="text-2xl font-bold">{{ report.ticker }}</h2>
+                <p class="text-gray-600">{{ report.name }}</p>
+                <div class="flex gap-2 mt-2">
+                    {% if report.sector %}
+                        <span class="badge badge-primary">{{ report.sector }}</span>
+                    {% endif %}
+                    {% if report.industry %}
+                        <span class="badge badge-secondary">{{ report.industry }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-3xl font-bold text-primary">
+                    ¥{{ report.current_price|round(0)|int if report.current_price else 'N/A' }}
+                </div>
+                <div class="text-sm text-gray-500">現在株価</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- バリュエーション -->
+    <div class="card bg-base-200 mb-4">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">📈 バリュエーション</h3>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <td class="font-bold">PER</td>
+                            <td class="{% if report.valuation.pe_ratio and report.valuation.pe_ratio < 15 %}text-success{% elif report.valuation.pe_ratio and report.valuation.pe_ratio > 25 %}text-warning{% endif %}">
+                                {{ report.valuation.pe_ratio|round(2) if report.valuation.pe_ratio else 'N/A' }}倍
+                            </td>
+                            <td class="text-sm text-gray-500">株価収益率</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">PBR</td>
+                            <td class="{% if report.valuation.pb_ratio and report.valuation.pb_ratio < 1 %}text-success{% elif report.valuation.pb_ratio and report.valuation.pb_ratio > 2 %}text-warning{% endif %}">
+                                {{ report.valuation.pb_ratio|round(2) if report.valuation.pb_ratio else 'N/A' }}倍
+                            </td>
+                            <td class="text-sm text-gray-500">株価純資産倍率</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">配当利回り</td>
+                            <td class="{% if report.valuation.dividend_yield and report.valuation.dividend_yield > 3 %}text-success{% endif %}">
+                                {{ (report.valuation.dividend_yield * 100)|round(2) if report.valuation.dividend_yield else 'N/A' }}%
+                            </td>
+                            <td class="text-sm text-gray-500">株主還元</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">ROE</td>
+                            <td class="{% if report.valuation.roe and report.valuation.roe > 15 %}text-success{% endif %}">
+                                {{ (report.valuation.roe * 100)|round(2) if report.valuation.roe else 'N/A' }}%
+                            </td>
+                            <td class="text-sm text-gray-500">自己資本利益率</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">利益成長率</td>
+                            <td class="{% if report.valuation.earnings_growth and report.valuation.earnings_growth > 10 %}text-success{% elif report.valuation.earnings_growth and report.valuation.earnings_growth < 0 %}text-warning{% endif %}">
+                                {{ (report.valuation.earnings_growth * 100)|round(2) if report.valuation.earnings_growth else 'N/A' }}%
+                            </td>
+                            <td class="text-sm text-gray-500">前年比</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 割安度判定 -->
+    <div class="card bg-base-200 mb-4">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">🎯 割安度判定</h3>
+            <div class="flex items-center gap-4">
+                <div class="radial-progress text-primary" style="--value:{{ report.health.score or 50 }}; --size:5rem;" role="progressbar">
+                    {{ report.health.score or 50 }}
+                </div>
+                <div>
+                    <div class="text-2xl font-bold {% if report.health.score and report.health.score >= 80 %}text-success{% elif report.health.score and report.health.score >= 60 %}text-primary{% elif report.health.score and report.health.score >= 40 %}text-warning{% else %}text-error{% endif %}">
+                        {{ report.health.label or '標準' }}
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        {% if report.health.score and report.health.score >= 80 %}
+                            非常に割安な銘柄です。投資候補として検討に値します。
+                        {% elif report.health.score and report.health.score >= 60 %}
+                            やや割安な銘柄です。追加分析をお勧めします。
+                        {% elif report.health.score and report.health.score >= 40 %}
+                            標準的なバリュエーションです。
+                        {% elif report.health.score and report.health.score >= 20 %}
+                            やや割高な銘柄です。
+                        {% else %}
+                            非常に割高な銘柄です。
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 株主還元 -->
+    <div class="card bg-base-200 mb-4">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">💰 株主還元</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-base-300 rounded-box p-4">
+                    <div class="text-sm text-gray-500">配当利回り</div>
+                    <div class="text-2xl font-bold text-success">
+                        {{ (report.valuation.dividend_yield * 100)|round(2) if report.valuation.dividend_yield else 'N/A' }}%
+                    </div>
+                </div>
+                <div class="bg-base-300 rounded-box p-4">
+                    <div class="text-sm text-gray-500">自社株買い利回り</div>
+                    <div class="text-2xl font-bold">N/A</div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+                合計株主還元率：{{ (report.valuation.dividend_yield * 100)|round(2) if report.valuation.dividend_yield else 'N/A' }}%
+            </p>
+        </div>
+    </div>
+
+    <!-- 推定利回り -->
+    <div class="card bg-base-200 mb-4">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">🔮 推定利回り</h3>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center bg-error bg-opacity-10 rounded-box p-4">
+                    <div class="text-sm text-error font-bold">楽観シナリオ</div>
+                    <div class="text-2xl font-bold text-error">
+                        {{ report.forecast.optimistic|round(1) if report.forecast.optimistic else 'N/A' }}%
+                    </div>
+                </div>
+                <div class="text-center bg-primary bg-opacity-10 rounded-box p-4">
+                    <div class="text-sm text-primary font-bold">ベースシナリオ</div>
+                    <div class="text-2xl font-bold text-primary">
+                        {{ report.forecast.base|round(1) if report.forecast.base else 'N/A' }}%
+                    </div>
+                </div>
+                <div class="text-center bg-success bg-opacity-10 rounded-box p-4">
+                    <div class="text-sm text-success font-bold">悲観シナリオ</div>
+                    <div class="text-2xl font-bold text-success">
+                        {{ report.forecast.pessimistic|round(1) if report.forecast.pessimistic else 'N/A' }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- バリュートラップ判定 -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">⚠️ バリュートラップ判定</h3>
+            {% if report.value_trap and report.value_trap.is_trap %}
+                <div class="alert alert-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <div>
+                        <span class="font-bold">バリュートラップの可能性があります</span>
+                        <p class="text-sm">{{ report.value_trap.reason or '詳細な分析をお勧めします' }}</p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>バリュートラップの懸念はありません</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- アクション -->
+    <div class="mt-4 flex gap-2 flex-wrap">
+        <a href="/screening" class="btn btn-outline">
+            🔍 スクリーニングに戻る
+        </a>
+        <button class="btn btn-primary" onclick="addToWatchlist('{{ report.ticker }}')">
+            ⭐ ウォッチリストに追加
+        </button>
+        <button class="btn btn-secondary" onclick="copyTicker('{{ report.ticker }}')">
+            📋 ティッカーをコピー
+        </button>
+    </div>
+{% else %}
+    <div class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+            <h3 class="font-bold">銘柄データの取得に失敗しました</h3>
+            <p class="text-sm mt-1">{{ report.error if report and report.error else 'ティッカーシンボルを確認してください。' }}</p>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+function addToWatchlist(ticker) {
+    const listName = prompt('ウォッチリスト名を入力してください（新規作成されます）:', '注目銘柄');
+    if (!listName) return;
+
+    fetch('/api/watchlist', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            action: 'add',
+            list_name: listName,
+            tickers: [ticker]
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`${ticker} を「${listName}」に追加しました`, 'success');
+        } else {
+            showToast('エラー：' + JSON.stringify(data), 'error');
+        }
+    })
+    .catch(error => {
+        showToast('エラー：' + error.message, 'error');
+    });
+}
+
+function copyTicker(ticker) {
+    navigator.clipboard.writeText(ticker).then(() => {
+        showToast(`ティッカー「${ticker}」をコピーしました`, 'success');
+    }).catch(() => {
+        showToast('コピーに失敗しました', 'error');
+    });
+}
+</script>

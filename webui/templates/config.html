@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs mb-4">
+    <ul>
+        <li><a href="/">ホーム</a></li>
+        <li>API 設定</li>
+    </ul>
+</div>
+
+<h1 class="text-3xl font-bold mb-6">⚙️ API 設定</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- サイドバー：ステータス -->
+    <div class="lg:col-span-1">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">📊 接続ステータス</h2>
+                
+                <div class="space-y-3 mt-4">
+                    <!-- Yahoo Finance -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-success"></div>
+                        <span>Yahoo Finance</span>
+                        <span class="badge badge-success badge-sm">利用可能</span>
+                    </div>
+                    
+                    <!-- Neo4j -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full {{ 'bg-success' if status.neo4j.configured else 'bg-error' }}"></div>
+                        <span>Neo4j</span>
+                        <span class="badge badge-{{ 'success' if status.neo4j.configured else 'error' }} badge-sm">
+                            {{ '設定済' if status.neo4j.configured else '未設定' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Grok API -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full {{ 'bg-success' if status.grok.configured else 'bg-error' }}"></div>
+                        <span>Grok API (xAI)</span>
+                        <span class="badge badge-{{ 'success' if status.grok.configured else 'error' }} badge-sm">
+                            {{ '設定済' if status.grok.configured else '未設定' }}
+                        </span>
+                    </div>
+                    
+                    <!-- TEI -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full {{ 'bg-success' if status.tei.configured else 'bg-warning' }}"></div>
+                        <span>TEI</span>
+                        <span class="badge badge-{{ 'success' if status.tei.configured else 'warning' }} badge-sm">
+                            {{ '設定済' if status.tei.configured else 'オプション' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Perplexity -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full {{ 'bg-success' if status.perplexity.configured else 'bg-error' }}"></div>
+                        <span>Perplexity API</span>
+                        <span class="badge badge-{{ 'success' if status.perplexity.configured else 'error' }} badge-sm">
+                            {{ '設定済' if status.perplexity.configured else '未設定' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Linear -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full {{ 'bg-success' if status.linear.configured else 'bg-error' }}"></div>
+                        <span>Linear</span>
+                        <span class="badge badge-{{ 'success' if status.linear.configured else 'error' }} badge-sm">
+                            {{ '設定済' if status.linear.configured else '未設定' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm">
+                        外部 API が未設定でも、Yahoo Finance を使用した基本機能は利用可能です。
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- クイックリンク -->
+        <div class="card bg-base-100 shadow-xl mt-4">
+            <div class="card-body">
+                <h3 class="font-bold text-sm">🔗 API 登録リンク</h3>
+                <ul class="menu menu-sm mt-2">
+                    <li>
+                        <a href="https://console.x.ai/" target="_blank" class="text-xs">
+                            🚀 Grok API (xAI) 登録
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.perplexity.ai/" target="_blank" class="text-xs">
+                            🔍 Perplexity API 登録
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://neo4j.com/" target="_blank" class="text-xs">
+                            🗄️ Neo4j ダウンロード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://linear.app/" target="_blank" class="text-xs">
+                            📋 Linear 登録
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- メイン：設定フォーム -->
+    <div class="lg:col-span-3">
+        <form class="space-y-6" onsubmit="saveConfig(event)">
+            
+            <!-- Neo4j 設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">🗄️ Neo4j 設定</h2>
+                    <p class="text-sm text-gray-500">知識グラフの保存と検索に使用</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Neo4j URI</span>
+                            </label>
+                            <input type="text" name="NEO4J_URI" class="input input-bordered" 
+                                   value="{{ config.NEO4J_URI or 'bolt://localhost:7688' }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">モード</span>
+                            </label>
+                            <select name="NEO4J_MODE" class="select select-bordered">
+                                <option value="off" {{ 'selected' if config.NEO4J_MODE == 'off' else '' }}>オフ</option>
+                                <option value="summary" {{ 'selected' if config.NEO4J_MODE == 'summary' else '' }}>サマリー</option>
+                                <option value="full" {{ 'selected' if config.NEO4J_MODE == 'full' else '' }}>フル</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">ユーザー</span>
+                            </label>
+                            <input type="text" name="NEO4J_USER" class="input input-bordered" 
+                                   value="{{ config.NEO4J_USER or 'neo4j' }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">パスワード</span>
+                            </label>
+                            <input type="password" name="NEO4J_PASSWORD" class="input input-bordered" 
+                                   value="{{ config.NEO4J_PASSWORD or '' }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grok API 設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">🚀 Grok API (xAI)</h2>
+                    <p class="text-sm text-gray-500">X (Twitter) の感情分析とトレンド検索に使用</p>
+                    
+                    <div class="form-control mt-4">
+                        <label class="label">
+                            <span class="label-text">API キー</span>
+                        </label>
+                        <input type="password" name="XAI_API_KEY" class="input input-bordered" 
+                               value="{{ config.XAI_API_KEY or '' }}" 
+                               placeholder="xai-xxxxxxxxxxxxx" />
+                        <label class="label">
+                            <span class="label-text-alt">
+                                <a href="https://console.x.ai/" target="_blank" class="link link-primary">API キーを取得</a>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TEI 設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">📐 TEI (Vector Embeddings)</h2>
+                    <p class="text-sm text-gray-500">ベクトル検索に使用（Neo4j と連携）</p>
+                    
+                    <div class="form-control mt-4">
+                        <label class="label">
+                            <span class="label-text">TEI URL</span>
+                        </label>
+                        <input type="text" name="TEI_URL" class="input input-bordered" 
+                               value="{{ config.TEI_URL or 'http://localhost:8081' }}" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Perplexity API 設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">🔍 Perplexity API</h2>
+                    <p class="text-sm text-gray-500">高度な Web 検索とリサーチに使用</p>
+                    
+                    <div class="form-control mt-4">
+                        <label class="label">
+                            <span class="label-text">API キー</span>
+                        </label>
+                        <input type="password" name="PERPLEXITY_API_KEY" class="input input-bordered" 
+                               value="{{ config.PERPLEXITY_API_KEY or '' }}" 
+                               placeholder="pplx-xxxxxxxxxxxxx" />
+                        <label class="label">
+                            <span class="label-text-alt">
+                                <a href="https://www.perplexity.ai/" target="_blank" class="link link-primary">API キーを取得</a>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Linear 設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">📋 Linear 統合</h2>
+                    <p class="text-sm text-gray-500">Issue トラッカーとの連携</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">有効化</span>
+                            </label>
+                            <select name="LINEAR_ENABLED" class="select select-bordered">
+                                <option value="off" {{ 'selected' if config.LINEAR_ENABLED != 'on' else '' }}>オフ</option>
+                                <option value="on" {{ 'selected' if config.LINEAR_ENABLED == 'on' else '' }}>オン</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">API キー</span>
+                            </label>
+                            <input type="password" name="LINEAR_API_KEY" class="input input-bordered" 
+                                   value="{{ config.LINEAR_API_KEY or '' }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Team ID</span>
+                            </label>
+                            <input type="text" name="LINEAR_TEAM_ID" class="input input-bordered" 
+                                   value="{{ config.LINEAR_TEAM_ID or '' }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Project ID</span>
+                            </label>
+                            <input type="text" name="LINEAR_PROJECT_ID" class="input input-bordered" 
+                                   value="{{ config.LINEAR_PROJECT_ID or '' }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- コンテキスト設定 -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">🕐 コンテキスト設定</h2>
+                    <p class="text-sm text-gray-500">データの新しさの判定基準</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">新鮮度阈值 (時間)</span>
+                                <span class="label-text-alt">"FRESH" と判定する時間</span>
+                            </label>
+                            <input type="number" name="CONTEXT_FRESH_HOURS" class="input input-bordered" 
+                                   value="{{ config.CONTEXT_FRESH_HOURS or '24' }}" />
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">期間阈值 (時間)</span>
+                                <span class="label-text-alt">"RECENT" と判定する時間</span>
+                            </label>
+                            <input type="number" name="CONTEXT_RECENT_HOURS" class="input input-bordered" 
+                                   value="{{ config.CONTEXT_RECENT_HOURS or '168' }}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 保存ボタン -->
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    💾 設定を保存
+                </button>
+                <button type="button" class="btn btn-outline" onclick="testConnection()">
+                    🔌 接続テスト
+                </button>
+                <button type="button" class="btn btn-outline" onclick="location.reload()">
+                    🔄 リロード
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 設定保存モーダル -->
+<dialog id="save-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">✅ 設定を保存しました</h3>
+        <p class="py-4">
+            変更を適用するにはサーバーの再起動が必要です。<br>
+            手動で再起動するまで、一部の機能は現在の設定が使用されます。
+        </p>
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn">OK</button>
+            </form>
+        </div>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveConfig(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const config = {};
+    formData.forEach((value, key) => {
+        if (value) {
+            config[key] = value;
+        }
+    });
+    
+    try {
+        const response = await fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(config)
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('save-modal').showModal();
+        } else {
+            showToast('エラー：' + data.error, 'error');
+        }
+    } catch (error) {
+        showToast('エラー：' + error.message, 'error');
+    }
+}
+
+async function testConnection() {
+    showToast('接続テストを実行中...', 'info');
+    
+    try {
+        const response = await fetch('/api/config/test', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            let message = '接続テスト結果:\n\n';
+            for (const [service, result] of Object.entries(data.results)) {
+                const icon = result.ok ? '✅' : '❌';
+                message += `${icon} ${service}: ${result.message}\n`;
+            }
+            alert(message);
+        } else {
+            showToast('エラー：' + data.error, 'error');
+        }
+    } catch (error) {
+        showToast('エラー：' + error.message, 'error');
+    }
+}
+</script>
+{% endblock %}

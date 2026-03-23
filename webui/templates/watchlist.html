@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs mb-4">
+    <ul>
+        <li><a href="/">ホーム</a></li>
+        <li>ウォッチリスト</li>
+    </ul>
+</div>
+
+<h1 class="text-3xl font-bold mb-6">⭐ ウォッチリスト</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- リスト管理 -->
+    <div class="lg:col-span-1">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">リスト管理</h2>
+
+                <form class="space-y-4" onsubmit="createList(event)">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">リスト名</span>
+                        </label>
+                        <input type="text" id="list-name" class="input input-bordered" placeholder="例：注目銘柄" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">新規作成</button>
+                </form>
+
+                <div class="divider">既存リスト</div>
+
+                <div id="list-selector" class="space-y-2">
+                    <div class="text-center text-gray-500">
+                        <div class="loading loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 銘柄追加 -->
+        <div class="card bg-base-100 shadow-xl mt-4">
+            <div class="card-body">
+                <h2 class="card-title">銘柄追加</h2>
+
+                <form class="space-y-4" onsubmit="addTickers(event)">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">選択リスト</span>
+                        </label>
+                        <select id="add-list-select" class="select select-bordered" required>
+                            <option value="">リストを選択</option>
+                        </select>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">ティッカー (カンマ区切り)</span>
+                        </label>
+                        <input type="text" id="add-tickers" class="input input-bordered" placeholder="7203.T, AAPL" required />
+                        <label class="label">
+                            <span class="label-text-alt">複数銘柄はカンマで区切ってください</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-block">追加</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- リスト削除 -->
+        <div class="card bg-base-100 shadow-xl mt-4">
+            <div class="card-body">
+                <h2 class="card-title text-error">危険な操作</h2>
+                <p class="text-sm text-gray-500 mb-2">選択したリストを削除します</p>
+                <button class="btn btn-error btn-sm btn-block" onclick="deleteCurrentList()" id="delete-list-btn" disabled>
+                    リストを削除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 銘柄一覧 -->
+    <div class="lg:col-span-2">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between items-center">
+                    <h2 class="card-title">
+                        <span id="current-list-title">銘柄一覧</span>
+                    </h2>
+                    <span class="badge badge-primary" id="ticker-count">0 銘柄</span>
+                </div>
+
+                <div id="tickers-loading" class="text-center py-8">
+                    <div class="loading loading-spinner"></div>
+                </div>
+
+                <div id="tickers-content" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <label>
+                                            <input type="checkbox" id="select-all" class="checkbox" onchange="toggleSelectAll()" />
+                                        </label>
+                                    </th>
+                                    <th>ティッカー</th>
+                                    <th>追加日</th>
+                                    <th>アクション</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tickers-body">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 flex gap-2">
+                        <button class="btn btn-error btn-sm" onclick="removeSelected()">
+                            選択した銘柄を削除
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="analyzeSelected()">
+                            選択した銘柄を分析
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="screenSelected()">
+                            選択した銘柄をスクリーニング
+                        </button>
+                    </div>
+                </div>
+
+                <div id="no-tickers" class="hidden text-center text-gray-500 py-8">
+                    <p>このリストには銘柄がありません</p>
+                    <p class="text-sm mt-2">左側のフォームから銘柄を追加できます</p>
+                </div>
+
+                <div id="no-list-selected" class="text-center text-gray-500 py-8">
+                    <p>左側のリストから選択してください</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentList = null;
+let watchlists = {};
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+    loadWatchlists();
+});
+
+async function loadWatchlists() {
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'list'})
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            watchlists = data.watchlists || {};
+            renderListSelector();
+            renderAddListSelector();
+            
+            // 現在のリストを再読み込み
+            if (currentList && watchlists[currentList]) {
+                loadList(currentList);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading watchlists:', error);
+        alert('ウォッチリストの読み込みに失敗しました');
+    }
+}
+
+function renderListSelector() {
+    const container = document.getElementById('list-selector');
+    const lists = Object.keys(watchlists);
+
+    if (lists.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500">リストがありません</p>';
+        return;
+    }
+
+    container.innerHTML = lists.map(name => `
+        <div class="card bg-base-200 cursor-pointer hover:bg-base-300 transition-colors ${currentList === name ? 'border-2 border-primary' : ''}" onclick="loadList('${name}')">
+            <div class="card-body p-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold">${name}</h3>
+                    <span class="badge badge-sm">${watchlists[name].length}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAddListSelector() {
+    const select = document.getElementById('add-list-select');
+    const lists = Object.keys(watchlists);
+
+    select.innerHTML = '<option value="">リストを選択</option>' +
+        lists.map(name => `<option value="${name}">${name}</option>`).join('');
+    
+    // 現在のリストを選択状態に
+    if (currentList) {
+        select.value = currentList;
+    }
+}
+
+async function createList(event) {
+    event.preventDefault();
+    const name = document.getElementById('list-name').value.trim();
+
+    if (!name) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'add',
+                list_name: name,
+                tickers: []
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('list-name').value = '';
+            loadWatchlists();
+            alert(`リスト「${name}」を作成しました`);
+        } else {
+            alert('エラー：リストの作成に失敗しました');
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+async function loadList(listName) {
+    currentList = listName;
+    document.getElementById('current-list-title').textContent = listName;
+    document.getElementById('delete-list-btn').disabled = false;
+
+    const loading = document.getElementById('tickers-loading');
+    const content = document.getElementById('tickers-content');
+    const noTickers = document.getElementById('no-tickers');
+    const noListSelected = document.getElementById('no-list-selected');
+
+    noListSelected.classList.add('hidden');
+    loading.classList.remove('hidden');
+    content.classList.add('hidden');
+    noTickers.classList.add('hidden');
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'show', list_name: listName})
+        });
+        const data = await response.json();
+
+        loading.classList.add('hidden');
+
+        if (data.success && data.tickers && data.tickers.length > 0) {
+            content.classList.remove('hidden');
+            document.getElementById('ticker-count').textContent = data.tickers.length + ' 銘柄';
+            renderTickers(data.tickers);
+        } else {
+            noTickers.classList.remove('hidden');
+            document.getElementById('ticker-count').textContent = '0 銘柄';
+        }
+    } catch (error) {
+        loading.classList.add('hidden');
+        alert('エラー：' + error.message);
+    }
+
+    // リストセレクターを更新
+    renderListSelector();
+}
+
+function renderTickers(tickers) {
+    const tbody = document.getElementById('tickers-body');
+    tbody.innerHTML = tickers.map(ticker => `
+        <tr class="hover">
+            <td>
+                <label>
+                    <input type="checkbox" class="ticker-checkbox checkbox" value="${ticker}" />
+                </label>
+            </td>
+            <td class="font-bold">
+                <a href="/report?ticker=${ticker}" class="link link-primary">${ticker}</a>
+            </td>
+            <td class="text-gray-500">-</td>
+            <td>
+                <div class="flex gap-1">
+                    <button class="btn btn-sm btn-primary" onclick="quickAnalyze('${ticker}')" title="分析">
+                        📊
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="quickScreen('${ticker}')" title="スクリーニング">
+                        🔍
+                    </button>
+                    <button class="btn btn-sm btn-error" onclick="removeTicker('${ticker}')" title="削除">
+                        🗑️
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    // チェックボックスのリセット
+    document.getElementById('select-all').checked = false;
+}
+
+async function addTickers(event) {
+    event.preventDefault();
+    const listName = document.getElementById('add-list-select').value;
+    const tickersInput = document.getElementById('add-tickers').value;
+
+    if (!listName || !tickersInput.trim()) {
+        alert('リストとティッカーを選択してください');
+        return;
+    }
+
+    const tickers = tickersInput.split(',').map(t => t.trim()).filter(t => t);
+
+    if (tickers.length === 0) {
+        alert('有効なティッカーを入力してください');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'add',
+                list_name: listName,
+                tickers: tickers
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('add-tickers').value = '';
+            loadWatchlists();
+            if (currentList === listName) {
+                loadList(listName);
+            }
+            alert(`${tickers.length}銘柄を追加しました`);
+        } else {
+            alert('エラー：' + JSON.stringify(data));
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+async function removeTicker(ticker) {
+    if (!currentList) return;
+
+    if (!confirm(`銘柄「${ticker}」を削除しますか？`)) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'remove',
+                list_name: currentList,
+                tickers: [ticker]
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadWatchlists();
+            loadList(currentList);
+        } else {
+            alert('エラー：' + JSON.stringify(data));
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.ticker-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function getSelectedTickers() {
+    const checkboxes = document.querySelectorAll('.ticker-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+async function removeSelected() {
+    if (!currentList) return;
+
+    const tickers = getSelectedTickers();
+    if (tickers.length === 0) {
+        alert('削除する銘柄を選択してください');
+        return;
+    }
+
+    if (!confirm(`${tickers.length}銘柄を削除しますか？`)) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'remove',
+                list_name: currentList,
+                tickers: tickers
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadWatchlists();
+            loadList(currentList);
+        } else {
+            alert('エラー：' + JSON.stringify(data));
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+function quickAnalyze(ticker) {
+    window.open(`/report?ticker=${ticker}`, '_blank');
+}
+
+function quickScreen(ticker) {
+    // 単一銘柄でスクリーニング
+    window.location.href = `/screening?region=us&strategy=value`;
+}
+
+function analyzeSelected() {
+    const tickers = getSelectedTickers();
+    if (tickers.length === 0) {
+        alert('分析する銘柄を選択してください');
+        return;
+    }
+
+    // 最初の銘柄の分析ページへ
+    window.open(`/report?ticker=${tickers[0]}`, '_blank');
+}
+
+function screenSelected() {
+    const tickers = getSelectedTickers();
+    if (tickers.length === 0) {
+        alert('スクリーニングする銘柄を選択してください');
+        return;
+    }
+
+    // スクリーニングページへ（後で個別分析に使用）
+    const params = tickers.map(t => `ticker=${t}`).join('&');
+    window.location.href = `/report?${params}`;
+}
+
+async function deleteCurrentList() {
+    if (!currentList) return;
+
+    if (!confirm(`リスト「${currentList}」を削除しますか？\nこの操作は取り消せません。`)) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'delete_list',
+                list_name: currentList
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            currentList = null;
+            document.getElementById('current-list-title').textContent = '銘柄一覧';
+            document.getElementById('delete-list-btn').disabled = true;
+            document.getElementById('tickers-content').classList.add('hidden');
+            document.getElementById('no-list-selected').classList.remove('hidden');
+            loadWatchlists();
+            alert(`リスト「${currentList}」を削除しました`);
+        } else {
+            alert('エラー：' + JSON.stringify(data));
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+</script>
+{% endblock %}

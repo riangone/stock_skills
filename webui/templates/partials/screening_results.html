@@ -1,0 +1,271 @@
+{# スクリーニング結果の HTMX パーシャル #}
+
+{% if results and results|length > 0 %}
+    <!-- サマリー -->
+    <div class="mb-4">
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-title">合計</div>
+                <div class="stat-value text-primary">{{ results|length }}銘柄</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">平均 PER</div>
+                <div class="stat-value text-sm">
+                    {% if summary.avg_pe %}{{ summary.avg_pe|round(2) }}倍{% else %}N/A{% endif %}
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">平均 PBR</div>
+                <div class="stat-value text-sm">
+                    {% if summary.avg_pb %}{{ summary.avg_pb|round(2) }}倍{% else %}N/A{% endif %}
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">平均配当利回り</div>
+                <div class="stat-value text-sm">
+                    {% if summary.avg_dividend_yield %}{{ (summary.avg_dividend_yield * 100)|round(2) }}%{% else %}N/A{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結果テーブル -->
+    <div class="overflow-x-auto">
+        <table class="table table-zebra" id="screening-results-table">
+            <thead>
+                <tr>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 0)">
+                            ティッカー ⇅
+                        </button>
+                    </th>
+                    <th>会社名</th>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 2)">
+                            株価 ⇅
+                        </button>
+                    </th>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 3)">
+                            PER ⇅
+                        </button>
+                    </th>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 4)">
+                            PBR ⇅
+                        </button>
+                    </th>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 5)">
+                            配当利回り ⇅
+                        </button>
+                    </th>
+                    <th>
+                        <button class="btn btn-ghost btn-xs" onclick="sortTable('screening-results-table', 6)">
+                            ROE ⇅
+                        </button>
+                    </th>
+                    <th>アクション</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in results %}
+                <tr class="hover">
+                    <td class="font-bold">
+                        <a href="/report?ticker={{ item.ticker }}" class="link link-primary">
+                            {{ item.ticker }}
+                        </a>
+                    </td>
+                    <td>{{ item.name or 'N/A' }}</td>
+                    <td>¥{{ item.price|round(0)|int }}</td>
+                    <td>
+                        {% if item.pe_ratio %}
+                            <span class="{% if item.pe_ratio < 15 %}text-success{% elif item.pe_ratio > 25 %}text-warning{% endif %}">
+                                {{ item.pe_ratio|round(2) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.pb_ratio %}
+                            <span class="{% if item.pb_ratio < 1 %}text-success{% elif item.pb_ratio > 2 %}text-warning{% endif %}">
+                                {{ item.pb_ratio|round(2) }}
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.dividend_yield %}
+                            <span class="{% if item.dividend_yield > 3 %}text-success{% endif %}">
+                                {{ (item.dividend_yield * 100)|round(2) }}%
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.roe %}
+                            <span class="{% if item.roe > 15 %}text-success{% endif %}">
+                                {{ (item.roe * 100)|round(2) }}%
+                            </span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex gap-1">
+                            <a href="/report?ticker={{ item.ticker }}" class="btn btn-sm btn-primary" title="詳細レポート">
+                                📊
+                            </a>
+                            <button class="btn btn-sm btn-secondary" onclick="addToWatchlistOne('{{ item.ticker }}')" title="ウォッチリストに追加">
+                                ⭐
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- エクスポートボタン -->
+    <div class="mt-4 flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline" onclick="exportToCSV()">
+            📥 CSV エクスポート
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="addToWatchlist()">
+            ⭐ ウォッチリストに追加
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="printResults()">
+            🖨️ 印刷
+        </button>
+    </div>
+{% else %}
+    <div class="alert alert-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <div>
+            <h3 class="font-bold">条件に一致する銘柄が見つかりませんでした</h3>
+            <p class="text-sm mt-1">条件を緩和して再度お試しください</p>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+// CSV エクスポート
+function exportToCSV() {
+    const table = document.querySelector('#screening-results-table');
+    if (!table) {
+        showToast('エクスポートする結果がありません', 'warning');
+        return;
+    }
+
+    const data = [];
+    const rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+            data.push({
+                'ティッカー': cells[0].textContent.trim(),
+                '会社名': cells[1].textContent.trim(),
+                '株価': cells[2].textContent.replace('¥', ''),
+                'PER': cells[3].textContent.trim(),
+                'PBR': cells[4].textContent.trim(),
+                '配当利回り': cells[5].textContent.trim(),
+                'ROE': cells[6].textContent.trim()
+            });
+        }
+    });
+
+    if (data.length === 0) {
+        showToast('エクスポートするデータがありません', 'warning');
+        return;
+    }
+
+    const filename = 'screening_results_' + new Date().toISOString().slice(0, 10) + '.csv';
+    exportToCSV(data, filename);
+}
+
+// ウォッチリストに追加（単一銘柄）
+async function addToWatchlistOne(ticker) {
+    const listName = prompt('ウォッチリスト名を入力してください（新規作成されます）:', '注目銘柄');
+    if (!listName) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'add',
+                list_name: listName,
+                tickers: [ticker]
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(`${ticker} を「${listName}」に追加しました`, 'success');
+        } else {
+            showToast('エラー：' + JSON.stringify(data), 'error');
+        }
+    } catch (error) {
+        showToast('エラー：' + error.message, 'error');
+    }
+}
+
+// ウォッチリストに追加（全銘柄）
+async function addToWatchlist() {
+    const table = document.querySelector('#screening-results-table');
+    if (!table) {
+        showToast('追加する結果がありません', 'warning');
+        return;
+    }
+
+    const tickers = [];
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const ticker = row.querySelector('td:first-child a')?.textContent.trim();
+        if (ticker) {
+            tickers.push(ticker);
+        }
+    });
+
+    if (tickers.length === 0) {
+        showToast('追加する銘柄がありません', 'warning');
+        return;
+    }
+
+    const listName = prompt(` ${tickers.length}銘柄をウォッチリストに追加します。\nリスト名を入力してください（新規作成されます）:`, 'スクリーニング結果');
+    if (!listName) return;
+
+    try {
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'add',
+                list_name: listName,
+                tickers: tickers
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(`${tickers.length}銘柄を「${listName}」に追加しました`, 'success');
+        } else {
+            showToast('エラー：' + JSON.stringify(data), 'error');
+        }
+    } catch (error) {
+        showToast('エラー：' + error.message, 'error');
+    }
+}
+
+// 印刷
+function printResults() {
+    window.print();
+}
+</script>

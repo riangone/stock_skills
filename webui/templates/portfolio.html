@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs mb-4">
+    <ul>
+        <li><a href="/">ホーム</a></li>
+        <li>ポートフォリオ管理</li>
+    </ul>
+</div>
+
+<h1 class="text-3xl font-bold mb-6">💼 ポートフォリオ管理</h1>
+
+<!-- タブナビゲーション -->
+<div role="tablist" class="tabs tabs-boxed mb-4">
+    <a role="tab" class="tab tab-active" data-tab="snapshot">📊 損益表示</a>
+    <a role="tab" class="tab" data-tab="trade">💹 売買記録</a>
+    <a role="tab" class="tab" data-tab="analyze">🔍 分析</a>
+    <a role="tab" class="tab" data-tab="health">💚 ヘルスチェック</a>
+</div>
+
+<!-- 損益表示 -->
+<div id="tab-snapshot" class="tab-content">
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="flex justify-between items-center">
+                <h2 class="card-title">📊 現在のポートフォリオ</h2>
+                <button class="btn btn-sm btn-primary" onclick="loadSnapshot()">
+                    🔄 更新
+                </button>
+            </div>
+
+            <!-- 合計表示 -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="stat bg-base-200 rounded-box p-4">
+                    <div class="stat-title">評価総額</div>
+                    <div class="stat-value text-primary" id="total-value">-</div>
+                </div>
+                <div class="stat bg-base-200 rounded-box p-4">
+                    <div class="stat-title">取得総額</div>
+                    <div class="stat-value" id="total-cost">-</div>
+                </div>
+                <div class="stat bg-base-200 rounded-box p-4">
+                    <div class="stat-title">評価損益</div>
+                    <div class="stat-value" id="total-profit">-</div>
+                </div>
+                <div class="stat bg-base-200 rounded-box p-4">
+                    <div class="stat-title">利回り</div>
+                    <div class="stat-value" id="total-return">-</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>銘柄</th>
+                            <th>保有株数</th>
+                            <th>取得単価</th>
+                            <th>現在値</th>
+                            <th>評価額</th>
+                            <th>損益</th>
+                            <th>損益率</th>
+                            <th>アクション</th>
+                        </tr>
+                    </thead>
+                    <tbody id="snapshot-body">
+                        <tr>
+                            <td colSpan="8" class="text-center">
+                                <button class="btn btn-primary" onclick="loadSnapshot()">
+                                    ロード
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                <button class="btn btn-sm btn-outline" onclick="clearPortfolio()">
+                    ⚠️ ポートフォリオをクリア
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 売買記録 -->
+<div id="tab-trade" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 買い注文 -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">💹 買い注文</h2>
+
+                <form class="space-y-4" onsubmit="executeTrade(event, 'buy')">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">ティッカー</span>
+                        </label>
+                        <input type="text" name="ticker" class="input input-bordered" placeholder="7203.T" required />
+                        <label class="label">
+                            <span class="label-text-alt">日本株：7203.T / 米国株：AAPL</span>
+                        </label>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">株数</span>
+                        </label>
+                        <input type="number" name="shares" class="input input-bordered" placeholder="100" required />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">取得単価 (円)</span>
+                        </label>
+                        <input type="number" name="price" class="input input-bordered" placeholder="2850" step="0.01" required />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">通貨</span>
+                        </label>
+                        <select name="currency" class="select select-bordered">
+                            <option value="JPY">JPY (日本円)</option>
+                            <option value="USD">USD (米ドル)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-block">買い注文</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 売り注文 -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">💹 売り注文</h2>
+
+                <form class="space-y-4" onsubmit="executeTrade(event, 'sell')">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">ティッカー</span>
+                        </label>
+                        <input type="text" name="ticker" class="input input-bordered" placeholder="7203.T" required />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">株数</span>
+                        </label>
+                        <input type="number" name="shares" class="input input-bordered" placeholder="100" required />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">売却単価 (円)</span>
+                        </label>
+                        <input type="number" name="price" class="input input-bordered" placeholder="3000" step="0.01" />
+                        <label class="label">
+                            <span class="label-text-alt">空欄の場合は現在値で計算</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-error btn-block">売り注文</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 取引履歴 -->
+    <div class="card bg-base-100 shadow-xl mt-6">
+        <div class="card-body">
+            <h2 class="card-title">📜 取引履歴</h2>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>銘柄</th>
+                            <th>取引</th>
+                            <th>株数</th>
+                            <th>単価</th>
+                            <th>金額</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-history-body">
+                        <tr>
+                            <td colSpan="6" class="text-center">
+                                <button class="btn btn-sm btn-outline" onclick="loadTradeHistory()">
+                                    履歴を読み込み
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析 -->
+<div id="tab-analyze" class="tab-content hidden">
+    <div class="space-y-4">
+        <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="loadAnalysis()">🔍 集中度分析を実行</button>
+            <button class="btn btn-secondary" onclick="loadShareholderReturn()">💰 株主還元率を計算</button>
+        </div>
+
+        <div id="analysis-result" class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <p class="text-center text-gray-500">分析を実行してください</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ヘルスチェック -->
+<div id="tab-health" class="tab-content hidden">
+    <div class="space-y-4">
+        <button class="btn btn-secondary" onclick="loadHealth()">💚 ヘルスチェックを実行</button>
+
+        <div id="health-result" class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <p class="text-center text-gray-500">ヘルスチェックを実行してください</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// タブ切り替え
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+        
+        // すべてのタブを非アクティブに
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        
+        // 選択したタブをアクティブに
+        this.classList.add('tab-active');
+        document.getElementById('tab-' + tabName).classList.remove('hidden');
+        
+        // 自動ロード
+        if (tabName === 'snapshot') {
+            loadSnapshot();
+        } else if (tabName === 'trade') {
+            loadTradeHistory();
+        }
+    });
+});
+
+// ポートフォリオスナップショットを読み込み
+async function loadSnapshot() {
+    const tbody = document.getElementById('snapshot-body');
+    tbody.innerHTML = '<tr><td colSpan="8" class="text-center"><div class="loading loading-spinner"></div></td></tr>';
+
+    try {
+        const response = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'snapshot'})
+        });
+        const data = await response.json();
+
+        if (data.success && data.result) {
+            const result = data.result;
+            const positions = result.positions || result.holdings || [];
+            
+            // 合計計算
+            let totalValue = 0;
+            let totalCost = 0;
+            
+            if (positions.length === 0) {
+                tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-gray-500">保有銘柄がありません</td></tr>';
+                document.getElementById('total-value').textContent = '-';
+                document.getElementById('total-cost').textContent = '-';
+                document.getElementById('total-profit').textContent = '-';
+                document.getElementById('total-return').textContent = '-';
+                return;
+            }
+
+            const rows = positions.map(pos => {
+                const costPrice = pos.cost_price || pos.costPrice || 0;
+                const shares = pos.shares || 0;
+                const currentPrice = pos.current_price || pos.currentPrice || costPrice;
+                const value = pos.value || pos.value_jpy || (currentPrice * shares);
+                const cost = costPrice * shares;
+                const profit = value - cost;
+                const returnRate = cost > 0 ? ((profit / cost) * 100) : 0;
+
+                totalValue += value;
+                totalCost += cost;
+
+                return `
+                    <tr>
+                        <td class="font-bold">${pos.symbol || pos.ticker}</td>
+                        <td>${shares.toLocaleString()}</td>
+                        <td>¥${costPrice.toLocaleString()}</td>
+                        <td>¥${currentPrice.toLocaleString()}</td>
+                        <td>¥${value.toLocaleString()}</td>
+                        <td class="${profit >= 0 ? 'text-success' : 'text-error'}">
+                            ¥${profit.toLocaleString()}
+                        </td>
+                        <td class="${returnRate >= 0 ? 'text-success' : 'text-error'}">
+                            ${returnRate.toFixed(2)}%
+                        </td>
+                        <td>
+                            <a href="/report?ticker=${pos.symbol || pos.ticker}" class="btn btn-sm btn-primary">
+                                詳細
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+
+            // 合計表示
+            const totalProfit = totalValue - totalCost;
+            const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0;
+
+            document.getElementById('total-value').textContent = '¥' + totalValue.toLocaleString();
+            document.getElementById('total-cost').textContent = '¥' + totalCost.toLocaleString();
+            document.getElementById('total-profit').textContent = '¥' + totalProfit.toLocaleString();
+            document.getElementById('total-profit').className = 'stat-value ' + (totalProfit >= 0 ? 'text-success' : 'text-error');
+            document.getElementById('total-return').textContent = totalReturn.toFixed(2) + '%';
+            document.getElementById('total-return').className = 'stat-value ' + (totalReturn >= 0 ? 'text-success' : 'text-error');
+        } else {
+            tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-gray-500">データがありません</td></tr>';
+            document.getElementById('total-value').textContent = '-';
+            document.getElementById('total-cost').textContent = '-';
+            document.getElementById('total-profit').textContent = '-';
+            document.getElementById('total-return').textContent = '-';
+        }
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-error">エラー：' + error.message + '</td></tr>';
+    }
+}
+
+// 売買実行
+async function executeTrade(event, action) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const payload = {
+        action: action,
+        ticker: formData.get('ticker'),
+        shares: parseInt(formData.get('shares')),
+        price: parseFloat(formData.get('price')),
+        currency: formData.get('currency') || 'JPY'
+    };
+
+    try {
+        const response = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            alert('取引が完了しました：' + (data.result.message || 'OK'));
+            form.reset();
+            loadSnapshot();
+            loadTradeHistory();
+        } else {
+            alert('エラー：' + JSON.stringify(data));
+        }
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+// 取引履歴読み込み
+async function loadTradeHistory() {
+    const tbody = document.getElementById('trade-history-body');
+    
+    // TODO: 取引履歴 API が実装されたら更新
+    tbody.innerHTML = '<tr><td colSpan="6" class="text-center text-gray-500">取引履歴はありません</td></tr>';
+}
+
+// 集中度分析
+async function loadAnalysis() {
+    const resultDiv = document.getElementById('analysis-result');
+    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
+
+    try {
+        const response = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'analyze'})
+        });
+        const data = await response.json();
+
+        if (data.success && data.result) {
+            const r = data.result;
+            resultDiv.innerHTML = `
+                <div class="card-body">
+                    <h3 class="font-bold text-lg">🔍 集中度分析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div class="stat bg-base-200 rounded-box">
+                            <div class="stat-title">HHI</div>
+                            <div class="stat-value">${r.hhi ? r.hhi.toFixed(0) : 'N/A'}</div>
+                            <div class="stat-desc">0-10000 で評価</div>
+                        </div>
+                        <div class="stat bg-base-200 rounded-box">
+                            <div class="stat-title">最大比率</div>
+                            <div class="stat-value">${r.max_weight ? r.max_weight.toFixed(1) + '%' : 'N/A'}</div>
+                        </div>
+                        <div class="stat bg-base-200 rounded-box">
+                            <div class="stat-title">銘柄数</div>
+                            <div class="stat-value">${r.num_holdings || 0}</div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-500">
+                            ${getHHIComment(r.hhi)}
+                        </p>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">分析できません</div>';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    }
+}
+
+// HHI コメント
+function getHHIComment(hhi) {
+    if (!hhi) return 'HHI は集中度を示す指標です。2500 未満は分散、2500-5000 は中程度、5000 超は集中とされます。';
+    if (hhi < 2500) return '✅ 分散されたポートフォリオです';
+    if (hhi < 5000) return '⚠️ 中程度の集中度です';
+    return '❌ 集中度が高いです。分散を検討してください。';
+}
+
+// 株主還元率
+async function loadShareholderReturn() {
+    const resultDiv = document.getElementById('analysis-result');
+    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
+
+    try {
+        const response = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'shareholder_return'})
+        });
+        const data = await response.json();
+
+        if (data.success && data.result) {
+            const r = data.result;
+            resultDiv.innerHTML = `
+                <div class="card-body">
+                    <h3 class="font-bold text-lg">💰 株主還元率</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="stat bg-base-200 rounded-box">
+                            <div class="stat-title">配当利回り (加重平均)</div>
+                            <div class="stat-value text-success">${r.dividend_yield ? r.dividend_yield.toFixed(2) + '%' : 'N/A'}</div>
+                        </div>
+                        <div class="stat bg-base-200 rounded-box">
+                            <div class="stat-title">自社株買い利回り</div>
+                            <div class="stat-value">${r.buyback_yield ? r.buyback_yield.toFixed(2) + '%' : 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">計算できません</div>';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    }
+}
+
+// ヘルスチェック
+async function loadHealth() {
+    const resultDiv = document.getElementById('health-result');
+    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
+
+    try {
+        const response = await fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'health'})
+        });
+        const data = await response.json();
+
+        if (data.success && data.result) {
+            const r = data.result;
+            let alertsHtml = '';
+            
+            if (r.alerts && r.alerts.length > 0) {
+                alertsHtml = r.alerts.map(alert => `
+                    <div class="alert alert-${alert.severity === 'high' ? 'error' : alert.severity === 'medium' ? 'warning' : 'info'} mt-2">
+                        <span>${alert.message}</span>
+                    </div>
+                `).join('');
+            } else {
+                alertsHtml = '<div class="alert alert-success mt-2"><span>✅ 問題はありません</span></div>';
+            }
+
+            resultDiv.innerHTML = `
+                <div class="card-body">
+                    <h3 class="font-bold text-lg">💚 ヘルスチェック</h3>
+                    <div class="mt-4">
+                        ${alertsHtml}
+                    </div>
+                    ${r.cross_holdings && r.cross_holdings.length > 0 ? `
+                        <div class="mt-4">
+                            <h4 class="font-bold">⚠️ クロスしている可能性があります</h4>
+                            <ul class="list-disc list-inside">
+                                ${r.cross_holdings.map(h => `<li>${h}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">チェックできません</div>';
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    }
+}
+
+// ポートフォリ오클리어
+async function clearPortfolio() {
+    if (!confirm('本当にポートフォリオをクリアしますか？この操作は取り消せません。')) {
+        return;
+    }
+
+    try {
+        // TODO: クリア API を実装
+        alert('ポートフォリオクリア機能は開発中です');
+    } catch (error) {
+        alert('エラー：' + error.message);
+    }
+}
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', function() {
+    loadSnapshot();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Stock Skills WebUI</title>
+
+    <!-- Tailwind CSS + DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/styles.css" />
+
+    <style>
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* モーバイル対応 */
+        @media (max-width: 768px) {
+            .navbar-title {
+                font-size: 1rem;
+            }
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-base-200">
+    <!-- ナビゲーション（モバイル対応） -->
+    <div class="navbar bg-base-100 shadow-lg">
+        <!-- モバイルメニューボタン -->
+        <div class="flex-1 lg:flex-none">
+            <div class="dropdown">
+                <label tabindex="0" class="btn btn-ghost lg:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                    </svg>
+                </label>
+                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="/screening">🔍 スクリーニング</a></li>
+                    <li><a href="/report">📊 銘柄レポート</a></li>
+                    <li><a href="/portfolio">💼 ポートフォリオ</a></li>
+                    <li><a href="/watchlist">⭐ ウォッチリスト</a></li>
+                    <li><a href="/config">⚙️ 設定</a></li>
+                </ul>
+            </div>
+            <a class="btn btn-ghost text-xl navbar-title" href="/">
+                📈 <span class="hidden sm:inline">Stock Skills</span><span class="sm:hidden">Stock</span>
+            </a>
+        </div>
+        
+        <!-- デスクトップメニュー -->
+        <div class="flex-none hidden lg:block">
+            <ul class="menu menu-horizontal px-1">
+                <li><a href="/screening">🔍 スクリーニング</a></li>
+                <li><a href="/report">📊 銘柄レポート</a></li>
+                <li><a href="/portfolio">💼 ポートフォリオ</a></li>
+                <li><a href="/watchlist">⭐ ウォッチリスト</a></li>
+                <li><a href="/config">⚙️ 設定</a></li>
+            </ul>
+        </div>
+        
+        <!-- モバイル設定ボタン -->
+        <div class="flex-none lg:hidden">
+            <a href="/config" class="btn btn-ghost btn-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main class="container mx-auto p-4 main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-8">
+        <aside>
+            <p class="text-sm">Stock Skills WebUI - 価値股スクリーニングシステム</p>
+        </aside>
+        <div class="flex gap-2 mt-2">
+            <button class="btn btn-sm btn-ghost" onclick="toggleTheme()" title="テーマ切り替え">
+                🎨 テーマ
+            </button>
+        </div>
+    </footer>
+
+    <!-- Utility Scripts -->
+    <script src="/static/utils.js"></script>
+
+    <script>
+        // HTMX リクエストエラー処理
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            const errorMsg = evt.detail.xhr.responseText || '不明なエラーが発生しました';
+            showToast('エラー：' + errorMsg, 'error');
+        });
+
+        // ローディング表示
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const target = evt.detail.target;
+            if (target) {
+                target.classList.add('opacity-50');
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            const target = evt.detail.target;
+            if (target) {
+                target.classList.remove('opacity-50');
+            }
+        });
+
+        // HTMX スワップ後イベント
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // エラーレスポンスの処理
+            if (evt.detail.xhr.status >= 400) {
+                console.error('HTMX Error:', evt.detail.xhr.status);
+            }
+        });
+
+        // モバイルメニューを閉じる（リンククリック時）
+        document.querySelectorAll('.dropdown-content a').forEach(link => {
+            link.addEventListener('click', function() {
+                const dropdown = this.closest('.dropdown');
+                if (dropdown) {
+                    dropdown.querySelector('input')?.click();
+                }
+            });
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

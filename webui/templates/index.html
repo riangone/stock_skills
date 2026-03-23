@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero min-h-[60vh] bg-base-200">
+    <div class="hero-content text-center">
+        <div class="max-w-md">
+            <h1 class="text-5xl font-bold mb-4">📈 Stock Skills</h1>
+            <p class="py-6 text-lg">
+                価値股スクリーニングシステムの Web インターフェース<br>
+                60+ 地域から割安銘柄を検索・分析します
+            </p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <a href="/screening" class="btn btn-primary btn-lg">
+                    🔍 株式スクリーニング
+                </a>
+                <a href="/report" class="btn btn-secondary btn-lg">
+                    📊 銘柄レポート
+                </a>
+                <a href="/portfolio" class="btn btn-accent btn-lg">
+                    💼 ポートフォリオ
+                </a>
+                <a href="/watchlist" class="btn btn-info btn-lg">
+                    ⭐ ウォッチリスト
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクセス -->
+<div class="mt-8">
+    <h2 class="text-2xl font-bold mb-4">クイックアクセス</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title">🇯🇵 日本株バリュー</h3>
+                <p>日本市場の割安株をスクリーニング</p>
+                <div class="card-actions justify-end">
+                    <a href="/screening?region=japan&strategy=value" class="btn btn-sm btn-primary">実行</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title">🇺🇸 米国高配当</h3>
+                <p>米国市場の高配当株を検索</p>
+                <div class="card-actions justify-end">
+                    <a href="/screening?region=us&strategy=high-dividend" class="btn btn-sm btn-primary">実行</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title">🌏 ASEAN 成長割安</h3>
+                <p>ASEAN 市場の成長割安株を発見</p>
+                <div class="card-actions justify-end">
+                    <a href="/screening?region=asean&strategy=growth-value" class="btn btn-sm btn-primary">実行</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 機能概要 -->
+<div class="mt-8">
+    <h2 class="text-2xl font-bold mb-4">機能概要</h2>
+    <div class="overflow-x-auto">
+        <table class="table table-zebra">
+            <thead>
+                <tr>
+                    <th>機能</th>
+                    <th>説明</th>
+                    <th>戦略</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>🔍 スクリーニング</td>
+                    <td>15 の戦略×60+ 地域から銘柄を検索</td>
+                    <td>バリュー・高配当・成長・モメンタム他</td>
+                </tr>
+                <tr>
+                    <td>📊 銘柄レポート</td>
+                    <td>個別銘柄の詳細分析</td>
+                    <td>バリュエーション・割安度・推定利回り</td>
+                </tr>
+                <tr>
+                    <td>💼 ポートフォリオ</td>
+                    <td>保有銘柄の管理・分析</td>
+                    <td>損益表示・集中度分析・ヘルスチェック</td>
+                </tr>
+                <tr>
+                    <td>⭐ ウォッチリスト</td>
+                    <td>注目銘柄のリスト管理</td>
+                    <td>追加・削除・一覧表示</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
