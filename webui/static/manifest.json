@@ -1,0 +1,46 @@
+{
+  "name": "Stock Skills WebUI",
+  "short_name": "StockSkills",
+  "description": "割安株スクリーニング・ポートフォリオ管理システム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f2",
+  "theme_color": "#1d4ed8",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "スクリーニング",
+      "short_name": "スクリーニング",
+      "url": "/screening",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ポートフォリオ",
+      "short_name": "PF",
+      "url": "/portfolio",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "銘柄レポート",
+      "short_name": "レポート",
+      "url": "/report",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

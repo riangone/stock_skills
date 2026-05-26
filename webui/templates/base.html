@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="lofi">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Stock Skills WebUI</title>
+    <title>{{ title }} - Stock Skills</title>
 
-    <!-- Tailwind CSS + DaisyUI -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json" />
+    <meta name="theme-color" content="#0a2540" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+
+    <!-- Tailwind (layout utilities) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- HTMX -->
@@ -15,141 +21,110 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Custom Styles -->
+    <!-- Styles -->
     <link rel="stylesheet" href="/static/styles.css" />
-
-    <style>
-        .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* モーバイル対応 */
-        @media (max-width: 768px) {
-            .navbar-title {
-                font-size: 1rem;
-            }
-            .main-content {
-                padding: 0.75rem;
-            }
-        }
-    </style>
 </head>
-<body class="min-h-screen bg-base-200">
-    <!-- ナビゲーション（モバイル対応） -->
-    <div class="navbar bg-base-100 shadow-lg">
-        <!-- モバイルメニューボタン -->
-        <div class="flex-1 lg:flex-none">
-            <div class="dropdown">
-                <label tabindex="0" class="btn btn-ghost lg:hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
-                    </svg>
-                </label>
-                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                    <li><a href="/screening">🔍 スクリーニング</a></li>
-                    <li><a href="/report">📊 銘柄レポート</a></li>
-                    <li><a href="/portfolio">💼 ポートフォリオ</a></li>
-                    <li><a href="/watchlist">⭐ ウォッチリスト</a></li>
-                    <li><a href="/config">⚙️ 設定</a></li>
-                </ul>
-            </div>
-            <a class="btn btn-ghost text-xl navbar-title" href="/">
-                📈 <span class="hidden sm:inline">Stock Skills</span><span class="sm:hidden">Stock</span>
-            </a>
-        </div>
-        
-        <!-- デスクトップメニュー -->
-        <div class="flex-none hidden lg:block">
-            <ul class="menu menu-horizontal px-1">
-                <li><a href="/screening">🔍 スクリーニング</a></li>
-                <li><a href="/report">📊 銘柄レポート</a></li>
-                <li><a href="/portfolio">💼 ポートフォリオ</a></li>
-                <li><a href="/watchlist">⭐ ウォッチリスト</a></li>
-                <li><a href="/config">⚙️ 設定</a></li>
-            </ul>
-        </div>
-        
-        <!-- モバイル設定ボタン -->
-        <div class="flex-none lg:hidden">
-            <a href="/config" class="btn btn-ghost btn-circle">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            </a>
-        </div>
-    </div>
+<body class="fade-in">
 
-    <!-- メインコンテンツ -->
-    <main class="container mx-auto p-4 main-content">
+    <!-- ── Topbar ────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="main-shell topbar-inner">
+            <a class="brand-lockup" href="/">
+                <div class="brand-mark">SS</div>
+                <div class="brand-copy">
+                    <span class="brand-title">Stock Skills</span>
+                    <span class="brand-subtitle">Investment Research</span>
+                </div>
+            </a>
+
+            <nav class="main-nav" aria-label="Primary">
+                <a href="/screening" class="nav-link {% if active_page == 'screening' %}active{% endif %}">スクリーニング</a>
+                <a href="/report"    class="nav-link {% if active_page == 'report'    %}active{% endif %}">銘柄レポート</a>
+                <a href="/portfolio" class="nav-link {% if active_page == 'portfolio' %}active{% endif %}">ポートフォリオ</a>
+                <a href="/watchlist" class="nav-link {% if active_page == 'watchlist' %}active{% endif %}">ウォッチリスト</a>
+                <a href="/config"    class="nav-link {% if active_page == 'config'    %}active{% endif %}">設定</a>
+            </nav>
+
+            <div class="topbar-actions">
+                {% if current_user %}
+                <span class="user-chip">{{ current_user }}</span>
+                <a href="/logout" class="logout-link">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Content ───────────────────────────────────────── -->
+    <main class="main-shell app-main">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- フッター -->
-    <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-8">
-        <aside>
-            <p class="text-sm">Stock Skills WebUI - 価値股スクリーニングシステム</p>
-        </aside>
-        <div class="flex gap-2 mt-2">
-            <button class="btn btn-sm btn-ghost" onclick="toggleTheme()" title="テーマ切り替え">
-                🎨 テーマ
-            </button>
+    <!-- ── Footer (desktop only) ─────────────────────────── -->
+    <footer class="app-footer">
+        <div class="main-shell app-footer-inner">
+            <span>&copy; 2026 Stock Skills</span>
+            <span>データを整理し、判断する。</span>
         </div>
     </footer>
 
-    <!-- Utility Scripts -->
+    <!-- ── Bottom nav (mobile only) ─────────────────────── -->
+    <nav class="bottom-nav" aria-label="Mobile navigation">
+        <a href="/"          class="bottom-nav-item {% if active_page == 'home'      %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+            </svg>
+            <span>ホーム</span>
+        </a>
+        <a href="/screening" class="bottom-nav-item {% if active_page == 'screening' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"/>
+            </svg>
+            <span>スクリーン</span>
+        </a>
+        <a href="/report"    class="bottom-nav-item {% if active_page == 'report'    %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/>
+            </svg>
+            <span>レポート</span>
+        </a>
+        <a href="/portfolio" class="bottom-nav-item {% if active_page == 'portfolio' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z"/>
+            </svg>
+            <span>PF</span>
+        </a>
+        <a href="/watchlist" class="bottom-nav-item {% if active_page == 'watchlist' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>
+            </svg>
+            <span>ウォッチ</span>
+        </a>
+    </nav>
+
     <script src="/static/utils.js"></script>
 
     <script>
-        // HTMX リクエストエラー処理
         document.body.addEventListener('htmx:responseError', function(evt) {
-            const errorMsg = evt.detail.xhr.responseText || '不明なエラーが発生しました';
-            showToast('エラー：' + errorMsg, 'error');
+            console.error('HTMX Error:', evt.detail.xhr.responseText);
         });
-
-        // ローディング表示
         document.body.addEventListener('htmx:beforeRequest', function(evt) {
-            const target = evt.detail.target;
-            if (target) {
-                target.classList.add('opacity-50');
-            }
+            if (evt.detail.target) evt.detail.target.style.opacity = '0.5';
         });
-
         document.body.addEventListener('htmx:afterRequest', function(evt) {
-            const target = evt.detail.target;
-            if (target) {
-                target.classList.remove('opacity-50');
-            }
-        });
-
-        // HTMX スワップ後イベント
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            // エラーレスポンスの処理
-            if (evt.detail.xhr.status >= 400) {
-                console.error('HTMX Error:', evt.detail.xhr.status);
-            }
-        });
-
-        // モバイルメニューを閉じる（リンククリック時）
-        document.querySelectorAll('.dropdown-content a').forEach(link => {
-            link.addEventListener('click', function() {
-                const dropdown = this.closest('.dropdown');
-                if (dropdown) {
-                    dropdown.querySelector('input')?.click();
-                }
-            });
+            if (evt.detail.target) evt.detail.target.style.opacity = '1';
         });
     </script>
 
     {% block scripts %}{% endblock %}
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
+                    .then(r => console.log('SW registered:', r.scope))
+                    .catch(e => console.warn('SW failed:', e));
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1,104 +1,89 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="hero min-h-[60vh] bg-base-200">
-    <div class="hero-content text-center">
-        <div class="max-w-md">
-            <h1 class="text-5xl font-bold mb-4">📈 Stock Skills</h1>
-            <p class="py-6 text-lg">
-                価値股スクリーニングシステムの Web インターフェース<br>
-                60+ 地域から割安銘柄を検索・分析します
-            </p>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <a href="/screening" class="btn btn-primary btn-lg">
-                    🔍 株式スクリーニング
-                </a>
-                <a href="/report" class="btn btn-secondary btn-lg">
-                    📊 銘柄レポート
-                </a>
-                <a href="/portfolio" class="btn btn-accent btn-lg">
-                    💼 ポートフォリオ
-                </a>
-                <a href="/watchlist" class="btn btn-info btn-lg">
-                    ⭐ ウォッチリスト
-                </a>
-            </div>
-        </div>
+
+<!-- ── Hero ────────────────────────────────────────────── -->
+<section class="hero-editorial fade-in">
+    <p class="hero-kicker">Investment Research Workspace</p>
+    <h1 class="hero-title">データを整理し、<br>判断に集中する。</h1>
+    <p class="hero-description">
+        60以上の市場を横断する割安株スクリーニング、個別銘柄分析、ポートフォリオ管理を統合した、余計な装飾のない分析環境。
+    </p>
+</section>
+
+<!-- ── Navigation cards ─────────────────────────────────── -->
+<div class="nav-cards">
+    <a href="/screening" class="nav-card">
+        <span class="nav-card-label">Screen</span>
+        <div class="nav-card-title">株式スクリーニング</div>
+        <p class="nav-card-desc">15の戦略 × 60地域から割安・高配当・成長銘柄を抽出。</p>
+    </a>
+    <a href="/report" class="nav-card">
+        <span class="nav-card-label">Report</span>
+        <div class="nav-card-title">銘柄レポート</div>
+        <p class="nav-card-desc">PER・PBR・ROE・株主還元率・割安度スコアを個別に確認。</p>
+    </a>
+    <a href="/portfolio" class="nav-card">
+        <span class="nav-card-label">Portfolio</span>
+        <div class="nav-card-title">ポートフォリオ</div>
+        <p class="nav-card-desc">損益・集中度・ヘルスチェック・リバランス提案。</p>
+    </a>
+    <a href="/watchlist" class="nav-card">
+        <span class="nav-card-label">Watchlist</span>
+        <div class="nav-card-title">ウォッチリスト</div>
+        <p class="nav-card-desc">候補銘柄を保存して継続的に追跡・再評価。</p>
+    </a>
+</div>
+
+<!-- ── Quick access ──────────────────────────────────────── -->
+<div class="section-title">クイックアクセス</div>
+<div class="quick-grid">
+    <div class="quick-item">
+        <div class="quick-item-title">日本株バリュー</div>
+        <p class="quick-item-desc">PBRと配当水準を俯瞰する。</p>
+        <a href="/screening?region=japan&strategy=value" class="btn btn-sm btn-primary">実行</a>
+    </div>
+    <div class="quick-item">
+        <div class="quick-item-title">米国高配当</div>
+        <p class="quick-item-desc">還元傾向と利回りを比較する。</p>
+        <a href="/screening?region=us&strategy=high-dividend" class="btn btn-sm btn-primary">実行</a>
+    </div>
+    <div class="quick-item">
+        <div class="quick-item-title">ASEAN 成長割安</div>
+        <p class="quick-item-desc">市場を横断的に確認する。</p>
+        <a href="/screening?region=asean&strategy=growth-value" class="btn btn-sm btn-primary">実行</a>
     </div>
 </div>
 
-<!-- クイックアクセス -->
-<div class="mt-8">
-    <h2 class="text-2xl font-bold mb-4">クイックアクセス</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h3 class="card-title">🇯🇵 日本株バリュー</h3>
-                <p>日本市場の割安株をスクリーニング</p>
-                <div class="card-actions justify-end">
-                    <a href="/screening?region=japan&strategy=value" class="btn btn-sm btn-primary">実行</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h3 class="card-title">🇺🇸 米国高配当</h3>
-                <p>米国市場の高配当株を検索</p>
-                <div class="card-actions justify-end">
-                    <a href="/screening?region=us&strategy=high-dividend" class="btn btn-sm btn-primary">実行</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h3 class="card-title">🌏 ASEAN 成長割安</h3>
-                <p>ASEAN 市場の成長割安株を発見</p>
-                <div class="card-actions justify-end">
-                    <a href="/screening?region=asean&strategy=growth-value" class="btn btn-sm btn-primary">実行</a>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- ── Feature table ─────────────────────────────────────── -->
+<div class="section-title">機能一覧</div>
+<div class="overflow-x-auto">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>機能</th>
+                <th>説明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="font-semibold">スクリーニング</td>
+                <td class="text-gray-500">15戦略 × 60以上の地域から条件に合う銘柄を一覧で比較。</td>
+            </tr>
+            <tr>
+                <td class="font-semibold">銘柄レポート</td>
+                <td class="text-gray-500">PER・PBR・ROE・配当・バリュートラップ判定を個別確認。</td>
+            </tr>
+            <tr>
+                <td class="font-semibold">ポートフォリオ</td>
+                <td class="text-gray-500">保有銘柄の損益・集中度・健全性・リバランス提案を集約。</td>
+            </tr>
+            <tr>
+                <td class="font-semibold">ウォッチリスト</td>
+                <td class="text-gray-500">候補銘柄を保存して継続的に追跡・再分析。</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
-<!-- 機能概要 -->
-<div class="mt-8">
-    <h2 class="text-2xl font-bold mb-4">機能概要</h2>
-    <div class="overflow-x-auto">
-        <table class="table table-zebra">
-            <thead>
-                <tr>
-                    <th>機能</th>
-                    <th>説明</th>
-                    <th>戦略</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>🔍 スクリーニング</td>
-                    <td>15 の戦略×60+ 地域から銘柄を検索</td>
-                    <td>バリュー・高配当・成長・モメンタム他</td>
-                </tr>
-                <tr>
-                    <td>📊 銘柄レポート</td>
-                    <td>個別銘柄の詳細分析</td>
-                    <td>バリュエーション・割安度・推定利回り</td>
-                </tr>
-                <tr>
-                    <td>💼 ポートフォリオ</td>
-                    <td>保有銘柄の管理・分析</td>
-                    <td>損益表示・集中度分析・ヘルスチェック</td>
-                </tr>
-                <tr>
-                    <td>⭐ ウォッチリスト</td>
-                    <td>注目銘柄のリスト管理</td>
-                    <td>追加・削除・一覧表示</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 {% endblock %}

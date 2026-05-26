@@ -1,16 +1,15 @@
 """Core data models for portfolio management (KIK-365 Phase 2).
 
-Dataclasses providing type safety for the main domain objects.
+Pydantic models providing strict type validation and safety for domain objects.
 External interfaces remain dict-based for backward compatibility;
-these classes are used internally and provide to_dict() for conversion.
+these classes provide to_dict() and from_dict() for seamless integration.
 """
 
-from dataclasses import asdict, dataclass, field
-from typing import Optional, Union
+from typing import Optional, Union, Any, Dict, List
+from pydantic import BaseModel, Field, ConfigDict
 
 
-@dataclass
-class Position:
+class Position(BaseModel):
     """A single portfolio position.
 
     Attributes
@@ -40,11 +39,12 @@ class Position:
     memo : str
         Free-form note.
     """
+    model_config = ConfigDict(from_attributes=True)
 
     symbol: str
     shares: int
     cost_price: float
-    cost_currency: str
+    cost_currency: str = "JPY"
     current_price: float = 0.0
     value_jpy: float = 0.0
     sector: str = ""
@@ -60,43 +60,20 @@ class Position:
         return is_cash(self.symbol)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, d: dict) -> "Position":
-        return cls(
-            symbol=d.get("symbol", ""),
-            shares=int(d.get("shares", 0)),
-            cost_price=float(d.get("cost_price", 0.0)),
-            cost_currency=d.get("cost_currency", "JPY"),
-            current_price=float(d.get("current_price", 0.0)),
-            value_jpy=float(d.get("value_jpy") or d.get("evaluation_jpy") or 0.0),
-            sector=d.get("sector") or "",
-            country=d.get("country") or "",
-            market_currency=d.get("market_currency") or "",
-            name=d.get("name") or "",
-            purchase_date=d.get("purchase_date") or "",
-            memo=d.get("memo") or "",
-        )
+        # Handle legacy field mappings
+        data = d.copy()
+        if "evaluation_jpy" in data and not data.get("value_jpy"):
+            data["value_jpy"] = data.pop("evaluation_jpy")
+        return cls(**data)
 
 
-@dataclass
-class ForecastResult:
-    """Return estimate for a single stock.
-
-    Attributes
-    ----------
-    symbol : str
-        Ticker symbol.
-    method : str
-        Estimation method: "analyst", "historical", "no_data", or "cash".
-    base : float or None
-        Base-case annualized return estimate.
-    optimistic : float or None
-        Optimistic annualized return estimate.
-    pessimistic : float or None
-        Pessimistic annualized return estimate.
-    """
+class ForecastResult(BaseModel):
+    """Return estimate for a single stock."""
+    model_config = ConfigDict(from_attributes=True)
 
     symbol: str
     method: str
@@ -105,79 +82,43 @@ class ForecastResult:
     pessimistic: Optional[float] = None
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, d: dict) -> "ForecastResult":
-        return cls(
-            symbol=d.get("symbol", ""),
-            method=d.get("method", "no_data"),
-            base=d.get("base"),
-            optimistic=d.get("optimistic"),
-            pessimistic=d.get("pessimistic"),
-        )
+        return cls(**d)
 
 
-@dataclass
-class HealthResult:
-    """Health check result for a single holding.
-
-    Attributes
-    ----------
-    symbol : str
-        Ticker symbol.
-    trend : str
-        Price trend direction: "上昇", "横ばい", or "下降".
-    quality_label : str
-        Fundamental quality: "良好", "1指標↓", "複数悪化", or "対象外".
-    alert_level : str
-        Alert severity: "", "early_warning", "caution", or "exit".
-    reasons : list
-        Human-readable alert reason strings.
-    """
+class HealthResult(BaseModel):
+    """Health check result for a single holding."""
+    model_config = ConfigDict(from_attributes=True)
 
     symbol: str
     trend: str = ""
     quality_label: str = ""
     alert_level: str = ""
-    reasons: list = field(default_factory=list)
+    reasons: List[str] = Field(default_factory=list)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, d: dict) -> "HealthResult":
+        # Handle complex nesting in legacy dictionary
         alert = d.get("alert", {})
-        return cls(
-            symbol=d.get("symbol", ""),
-            trend=d.get("trend_health", {}).get("trend", ""),
-            quality_label=d.get("change_quality", {}).get("quality_label", ""),
-            alert_level=alert.get("level", ""),
-            reasons=alert.get("reasons", []),
-        )
+        data = {
+            "symbol": d.get("symbol", ""),
+            "trend": d.get("trend_health", {}).get("trend", ""),
+            "quality_label": d.get("change_quality", {}).get("quality_label", ""),
+            "alert_level": alert.get("level", ""),
+            "reasons": alert.get("reasons", []),
+        }
+        return cls(**data)
 
 
-@dataclass
-class RebalanceAction:
-    """A single rebalancing action proposal.
-
-    Attributes
-    ----------
-    action : str
-        Action type: "sell", "reduce", "increase", or "buy".
-    symbol : str
-        Ticker symbol.
-    name : str
-        Company/fund display name.
-    ratio : float
-        Proportion to sell/reduce (0.0-1.0) for sell/reduce actions.
-    amount_jpy : float
-        Amount in JPY for increase actions.
-    reason : str
-        Human-readable justification.
-    priority : int
-        Execution priority (1=highest, 99=default).
-    """
+class RebalanceAction(BaseModel):
+    """A single rebalancing action proposal."""
+    model_config = ConfigDict(from_attributes=True)
 
     action: str
     symbol: str
@@ -188,12 +129,16 @@ class RebalanceAction:
     priority: int = 99
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return self.model_dump()
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "RebalanceAction":
+        return cls(**d)
 
 
-@dataclass
-class YearlySnapshot:
+class YearlySnapshot(BaseModel):
     """1年分のシミュレーション結果 (KIK-366)."""
+    model_config = ConfigDict(from_attributes=True)
 
     year: int
     value: float
@@ -202,50 +147,33 @@ class YearlySnapshot:
     cumulative_dividends: float
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return self.model_dump()
 
 
-@dataclass
-class SimulationResult:
+class SimulationResult(BaseModel):
     """複利シミュレーション結果 (KIK-366)."""
+    model_config = ConfigDict(from_attributes=True)
 
-    scenarios: dict[str, list[YearlySnapshot]]
-    target: Optional[float]
-    target_year_base: Optional[float]
-    target_year_optimistic: Optional[float]
-    target_year_pessimistic: Optional[float]
-    required_monthly: Optional[float]
-    dividend_effect: float
-    dividend_effect_pct: float
+    scenarios: Dict[str, List[YearlySnapshot]]
+    monte_carlo: Optional[Dict[str, Any]] = None
+    target: Optional[float] = None
+    target_year_base: Optional[float] = None
+    target_year_optimistic: Optional[float] = None
+    target_year_pessimistic: Optional[float] = None
+    required_monthly: Optional[float] = None
+    dividend_effect: float = 0.0
+    dividend_effect_pct: float = 0.0
 
     years: int = 0
     monthly_add: float = 0.0
     reinvest_dividends: bool = True
     current_value: float = 0.0
-    portfolio_return_base: Union[float, None] = None
+    portfolio_return_base: Optional[float] = None
     dividend_yield: float = 0.0
 
     def to_dict(self) -> dict:
-        result = {
-            "scenarios": {
-                key: [s.to_dict() for s in snapshots]
-                for key, snapshots in self.scenarios.items()
-            },
-            "target": self.target,
-            "target_year_base": self.target_year_base,
-            "target_year_optimistic": self.target_year_optimistic,
-            "target_year_pessimistic": self.target_year_pessimistic,
-            "required_monthly": self.required_monthly,
-            "dividend_effect": self.dividend_effect,
-            "dividend_effect_pct": self.dividend_effect_pct,
-            "years": self.years,
-            "monthly_add": self.monthly_add,
-            "reinvest_dividends": self.reinvest_dividends,
-            "current_value": self.current_value,
-            "portfolio_return_base": self.portfolio_return_base,
-            "dividend_yield": self.dividend_yield,
-        }
-        return result
+        # Use model_dump to get dictionaries for nested structures
+        return self.model_dump()
 
     @classmethod
     def empty(cls) -> "SimulationResult":

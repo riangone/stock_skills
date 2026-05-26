@@ -12,3 +12,5 @@ __pycache__/
 .claude/settings.local.json
 data/models/
 articles/
+.webui.log
+.webui.pid

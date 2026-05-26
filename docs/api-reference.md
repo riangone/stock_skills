@@ -105,21 +105,6 @@ Core data models for portfolio management (KIK-365 Phase 2).
 #### class Position
 A single portfolio position.
 
-| Field | Type |
-|:---|:---|
-| `symbol` | `str` |
-| `shares` | `int` |
-| `cost_price` | `float` |
-| `cost_currency` | `str` |
-| `current_price` | `float` |
-| `value_jpy` | `float` |
-| `sector` | `str` |
-| `country` | `str` |
-| `market_currency` | `str` |
-| `name` | `str` |
-| `purchase_date` | `str` |
-| `memo` | `str` |
-
 - `is_cash() -> bool`
 - `to_dict() -> dict`
 - `from_dict(d: dict) -> 'Position'`
@@ -127,27 +112,11 @@ A single portfolio position.
 #### class ForecastResult
 Return estimate for a single stock.
 
-| Field | Type |
-|:---|:---|
-| `symbol` | `str` |
-| `method` | `str` |
-| `base` | `Optional[float]` |
-| `optimistic` | `Optional[float]` |
-| `pessimistic` | `Optional[float]` |
-
 - `to_dict() -> dict`
 - `from_dict(d: dict) -> 'ForecastResult'`
 
 #### class HealthResult
 Health check result for a single holding.
-
-| Field | Type |
-|:---|:---|
-| `symbol` | `str` |
-| `trend` | `str` |
-| `quality_label` | `str` |
-| `alert_level` | `str` |
-| `reasons` | `list` |
 
 - `to_dict() -> dict`
 - `from_dict(d: dict) -> 'HealthResult'`
@@ -155,50 +124,16 @@ Health check result for a single holding.
 #### class RebalanceAction
 A single rebalancing action proposal.
 
-| Field | Type |
-|:---|:---|
-| `action` | `str` |
-| `symbol` | `str` |
-| `name` | `str` |
-| `ratio` | `float` |
-| `amount_jpy` | `float` |
-| `reason` | `str` |
-| `priority` | `int` |
-
 - `to_dict() -> dict`
+- `from_dict(d: dict) -> 'RebalanceAction'`
 
 #### class YearlySnapshot
 1年分のシミュレーション結果 (KIK-366).
-
-| Field | Type |
-|:---|:---|
-| `year` | `int` |
-| `value` | `float` |
-| `cumulative_input` | `float` |
-| `capital_gain` | `float` |
-| `cumulative_dividends` | `float` |
 
 - `to_dict() -> dict`
 
 #### class SimulationResult
 複利シミュレーション結果 (KIK-366).
-
-| Field | Type |
-|:---|:---|
-| `scenarios` | `dict[str, list[YearlySnapshot]]` |
-| `target` | `Optional[float]` |
-| `target_year_base` | `Optional[float]` |
-| `target_year_optimistic` | `Optional[float]` |
-| `target_year_pessimistic` | `Optional[float]` |
-| `required_monthly` | `Optional[float]` |
-| `dividend_effect` | `float` |
-| `dividend_effect_pct` | `float` |
-| `years` | `int` |
-| `monthly_add` | `float` |
-| `reinvest_dividends` | `bool` |
-| `current_value` | `float` |
-| `portfolio_return_base` | `Union[float, None]` |
-| `dividend_yield` | `float` |
 
 - `to_dict() -> dict`
 - `empty() -> 'SimulationResult'` — シミュレーション不可時の空結果。
@@ -256,6 +191,14 @@ Portfolio concentration analysis module.
 - `get_concentration_multiplier(hhi: float) -> float` — Derive a concentration multiplier from an HHI value.
 - `analyze_concentration(portfolio_data: list[dict], weights: list[float]) -> dict` — Perform multi-axis concentration analysis on a portfolio.
 
+### src.core.portfolio.dividend_advisor
+
+Dividend management and advisory engine (KIK-580).
+
+- `generate_dividend_calendar(positions: List[dict], client) -> List[dict]` — Generate a chronological dividend calendar for the portfolio.
+- `get_dividend_alerts(calendar: List[dict], days_threshold: int=14) -> List[dict]` — Identify upcoming ex-dividend dates within the threshold.
+- `calculate_drip_impact(total_value: float, dividend_yield: float, years: int=10, reinvest: bool=True) -> Dict[str, float]` — Calculate the projected impact of Dividend Reinvestment Plan (DRIP).
+
 ### src.core.portfolio.fx_utils
 
 FX conversion utilities (KIK-511).
@@ -283,6 +226,13 @@ Current market regime assessment.
 | `drawdown` | `float | None` |
 | `index_symbol` | `str` |
 
+
+### src.core.portfolio.monte_carlo
+
+Monte Carlo simulation for portfolio growth (KIK-579).
+
+- `run_monte_carlo_simulation(current_value: float, mean_return: float, volatility: float, dividend_yield: float=0.0, years: int=10, monthly_add: float=0.0, reinvest_dividends: bool=True, n_simulations: int=1000) -> Dict[str, np.ndarray]` — Run Monte Carlo simulation for portfolio growth.
+- `get_monte_carlo_summary(mc_results: Dict[str, Any]) -> Dict[str, float]` — Extract key metrics from Monte Carlo results.
 
 ### src.core.portfolio.portfolio_bridge
 
@@ -334,7 +284,7 @@ Portfolio rebalancer engine (KIK-363).
 
 Portfolio compound interest simulation engine (KIK-366).
 
-- `simulate_portfolio(current_value: float, returns: dict[str, Union[float, None]], dividend_yield: float, years: int=10, monthly_add: float=0.0, reinvest_dividends: bool=True, target: Optional[float]=None) -> SimulationResult` — Run compound interest simulation for 3 scenarios.
+- `simulate_portfolio(current_value: float, returns: dict[str, Union[float, None]], dividend_yield: float, years: int=10, monthly_add: float=0.0, reinvest_dividends: bool=True, target: Optional[float]=None) -> SimulationResult` — Run compound interest simulation for 3 scenarios + Monte Carlo.
 - `calculate_target_year(yearly_values: list[float], target: float) -> Optional[float]` — Calculate the year when target is reached via linear interpolation.
 - `calculate_required_monthly(current_value: float, return_rate: float, dividend_yield: float, target: float, years: int, reinvest_dividends: bool=True) -> float` — Calculate required monthly contribution to reach target.
 
@@ -395,6 +345,13 @@ Provides OHLCV price history and recent news for a symbol.
 Provides macro-economic indicator data.
 
 - `get_macro_indicators() -> list[dict]` — Return current values for macro indicators (S&P500, VIX, etc.).
+
+### src.core.ports.notifications
+
+Notification port for external alerts (KIK-582).
+
+- `send_notification(message: str, provider: str='discord') -> bool` — Send a notification to an external service.
+- `alert_critical_health(symbol: str, alert_level: str, reason: str)` — Specific alert for critical stock health (EXIT/CAUTION).
 
 ### src.core.ports.research
 
@@ -687,6 +644,13 @@ Region configuration loaded from exchanges.yaml.
 - `small_cap_market_cap(code: str) -> Optional[int]` — Return small-cap market cap threshold for a region code, or None.
 - `market_class_name(code: str) -> Optional[str]` — Return market class name string (e.g. 'JapanMarket') for a region code.
 - `region_codes() -> list[str]` — Return all known region codes.
+
+### src.core.screening.semantic_theme
+
+Semantic theme mapping for stock screening (KIK-581).
+
+- `calculate_cosine_similarity(v1: List[float], v2: List[float]) -> float` — Calculate cosine similarity between two vectors.
+- `rank_stocks_by_theme(theme_query: str, stocks_data: List[dict], top_n: int=10) -> List[Tuple[dict, float]]` — Rank stocks by their relevance to a semantic theme.
 
 ### src.core.screening.technicals
 
@@ -1013,6 +977,7 @@ Stock-related Grok API functions: search_stock_deep, search_x_sentiment.
 
 - `search_x_sentiment(symbol: str, company_name: str='', timeout: int=30, context: str='') -> dict` — Search X for stock sentiment using Grok API.
 - `search_stock_deep(symbol: str, company_name: str='', timeout: int=30, context: str='') -> dict` — Deep research on a stock via X and web search.
+- `generate_trade_review(symbol: str, trade_info: dict, thesis: str='', timeout: int=30) -> str` — Generate an AI review of a trade by comparing outcome vs thesis.
 
 ### src.data.history._helpers
 
@@ -1140,7 +1105,9 @@ Internal normalization and sanitization utilities (KIK-449).
 Stock info and detail fetching (KIK-449, KIK-531).
 
 - `get_stock_info(symbol: str) -> Optional[dict]` — Fetch basic stock information for a single symbol.
+- `async_get_stock_info(symbol: str) -> Optional[dict]` — Fetch basic stock information asynchronously.
 - `get_multiple_stocks(symbols: list[str]) -> dict[str, Optional[dict]]` — Fetch stock info for multiple symbols with a 1-second delay between requests.
+- `async_get_multiple_stocks(symbols: list[str]) -> dict[str, Optional[dict]]` — Fetch stock info for multiple symbols concurrently.
 - `get_stock_detail(symbol: str) -> Optional[dict]` — Fetch detailed stock information including financial statements.
 
 ### src.data.yahoo_client.history

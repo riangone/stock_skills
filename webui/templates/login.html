@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - Stock Skills</title>
+    <link rel="manifest" href="/static/manifest.json" />
+    <meta name="theme-color" content="#0a2540" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+    <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+    <main class="login-shell">
+        <div class="login-card fade-in">
+
+            <!-- Header -->
+            <div class="login-header">
+                <div style="display:flex; align-items:center; gap:0.625rem; margin-bottom:1rem;">
+                    <div class="brand-mark">SS</div>
+                    <div class="brand-copy">
+                        <span class="brand-title">Stock Skills</span>
+                        <span class="brand-subtitle">Investment Research</span>
+                    </div>
+                </div>
+                <p style="font-size:0.8125rem; color:var(--c-text-muted); line-height:1.5;">
+                    スクリーニング・個別分析・ポートフォリオ管理を統合したリサーチ環境です。
+                </p>
+            </div>
+
+            <!-- Form -->
+            <div class="login-body">
+                <p style="font-size:var(--text-xl); font-weight:700; color:var(--c-text); margin-bottom:1.5rem; letter-spacing:-0.01em;">ログイン</p>
+
+                {% if error %}
+                <div class="alert alert-error" style="margin-bottom:1.25rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                    </svg>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <form method="post" action="/login">
+                    <input type="hidden" name="next" value="{{ next }}" />
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">ユーザー名</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="admin"
+                            class="input"
+                            required
+                            autofocus
+                            style="height:44px;"
+                        />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">パスワード</span>
+                        </label>
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="••••••••"
+                            class="input"
+                            required
+                            style="height:44px;"
+                        />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:1.25rem;">
+                        ログイン
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js', { scope: '/' });
+        }
+    </script>
+</body>
+</html>

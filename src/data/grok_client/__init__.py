@@ -42,6 +42,7 @@ from src.data.grok_client._common import (  # noqa: F401
 from src.data.grok_client.stock import (  # noqa: F401
     search_x_sentiment,
     search_stock_deep,
+    generate_trade_review,
     _build_sentiment_prompt,
     _build_stock_deep_prompt,
 )

@@ -1,229 +1,186 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="breadcrumbs mb-4">
+<div class="breadcrumbs">
     <ul>
         <li><a href="/">ホーム</a></li>
         <li>ポートフォリオ管理</li>
     </ul>
 </div>
 
-<h1 class="text-3xl font-bold mb-6">💼 ポートフォリオ管理</h1>
+<h1 class="page-title">ポートフォリオ管理</h1>
 
-<!-- タブナビゲーション -->
-<div role="tablist" class="tabs tabs-boxed mb-4">
-    <a role="tab" class="tab tab-active" data-tab="snapshot">📊 損益表示</a>
-    <a role="tab" class="tab" data-tab="trade">💹 売買記録</a>
-    <a role="tab" class="tab" data-tab="analyze">🔍 分析</a>
-    <a role="tab" class="tab" data-tab="health">💚 ヘルスチェック</a>
+<!-- ── Tabs ──────────────────────────────────────────────── -->
+<div class="tabs" role="tablist">
+    <button role="tab" class="tab tab-active" data-tab="snapshot">損益表示</button>
+    <button role="tab" class="tab" data-tab="trade">売買記録</button>
+    <button role="tab" class="tab" data-tab="analyze">分析</button>
+    <button role="tab" class="tab" data-tab="health">ヘルスチェック</button>
 </div>
 
-<!-- 損益表示 -->
+<!-- ── Snapshot ───────────────────────────────────────────── -->
 <div id="tab-snapshot" class="tab-content">
-    <div class="card bg-base-100 shadow-xl">
-        <div class="card-body">
-            <div class="flex justify-between items-center">
-                <h2 class="card-title">📊 現在のポートフォリオ</h2>
-                <button class="btn btn-sm btn-primary" onclick="loadSnapshot()">
-                    🔄 更新
-                </button>
-            </div>
 
-            <!-- 合計表示 -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div class="stat bg-base-200 rounded-box p-4">
-                    <div class="stat-title">評価総額</div>
-                    <div class="stat-value text-primary" id="total-value">-</div>
-                </div>
-                <div class="stat bg-base-200 rounded-box p-4">
-                    <div class="stat-title">取得総額</div>
-                    <div class="stat-value" id="total-cost">-</div>
-                </div>
-                <div class="stat bg-base-200 rounded-box p-4">
-                    <div class="stat-title">評価損益</div>
-                    <div class="stat-value" id="total-profit">-</div>
-                </div>
-                <div class="stat bg-base-200 rounded-box p-4">
-                    <div class="stat-title">利回り</div>
-                    <div class="stat-value" id="total-return">-</div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>銘柄</th>
-                            <th>保有株数</th>
-                            <th>取得単価</th>
-                            <th>現在値</th>
-                            <th>評価額</th>
-                            <th>損益</th>
-                            <th>損益率</th>
-                            <th>アクション</th>
-                        </tr>
-                    </thead>
-                    <tbody id="snapshot-body">
-                        <tr>
-                            <td colSpan="8" class="text-center">
-                                <button class="btn btn-primary" onclick="loadSnapshot()">
-                                    ロード
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">
-                <button class="btn btn-sm btn-outline" onclick="clearPortfolio()">
-                    ⚠️ ポートフォリオをクリア
-                </button>
-            </div>
+    <!-- Summary stats -->
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-title">評価総額</div>
+            <div class="stat-value text-primary" id="total-value">—</div>
         </div>
+        <div class="stat">
+            <div class="stat-title">取得総額</div>
+            <div class="stat-value" id="total-cost">—</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">評価損益</div>
+            <div class="stat-value" id="total-profit">—</div>
+        </div>
+        <div class="stat">
+            <div class="stat-title">利回り</div>
+            <div class="stat-value" id="total-return">—</div>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <span class="section-title" style="margin-bottom:0;">保有銘柄</span>
+        <button class="btn btn-sm btn-outline" onclick="loadSnapshot()">更新</button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>銘柄</th>
+                    <th>保有株数</th>
+                    <th>取得単価</th>
+                    <th>現在値</th>
+                    <th>評価額</th>
+                    <th>損益</th>
+                    <th>損益率</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="snapshot-body">
+                <tr>
+                    <td colspan="8" style="text-align:center;">
+                        <button class="btn btn-sm btn-primary" onclick="loadSnapshot()">読み込み</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <button class="btn btn-sm btn-ghost" style="color:var(--c-negative);" onclick="clearPortfolio()">
+            ポートフォリオをクリア
+        </button>
     </div>
 </div>
 
-<!-- 売買記録 -->
-<div id="tab-trade" class="tab-content hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 買い注文 -->
-        <div class="card bg-base-100 shadow-xl">
+<!-- ── Trade ──────────────────────────────────────────────── -->
+<div id="tab-trade" class="tab-content" style="display:none;">
+    <div class="trade-layout">
+        <!-- Buy -->
+        <div class="card">
             <div class="card-body">
-                <h2 class="card-title">💹 買い注文</h2>
-
-                <form class="space-y-4" onsubmit="executeTrade(event, 'buy')">
+                <div class="card-title">買い注文</div>
+                <form onsubmit="executeTrade(event, 'buy')">
                     <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">ティッカー</span>
-                        </label>
-                        <input type="text" name="ticker" class="input input-bordered" placeholder="7203.T" required />
-                        <label class="label">
-                            <span class="label-text-alt">日本株：7203.T / 米国株：AAPL</span>
-                        </label>
+                        <label class="label"><span class="label-text">ティッカー</span></label>
+                        <input type="text" name="ticker" class="input" placeholder="7203.T" required />
+                        <span class="label-text-alt">日本株: 7203.T / 米国株: AAPL</span>
                     </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">株数</span>
-                        </label>
-                        <input type="number" name="shares" class="input input-bordered" placeholder="100" required />
+                    <div class="form-row">
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">株数</span></label>
+                            <input type="number" name="shares" class="input" placeholder="100" required />
+                        </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">取得単価</span></label>
+                            <input type="number" name="price" class="input" placeholder="2850" step="0.01" required />
+                        </div>
                     </div>
-
                     <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">取得単価 (円)</span>
-                        </label>
-                        <input type="number" name="price" class="input input-bordered" placeholder="2850" step="0.01" required />
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">通貨</span>
-                        </label>
-                        <select name="currency" class="select select-bordered">
+                        <label class="label"><span class="label-text">通貨</span></label>
+                        <select name="currency" class="select">
                             <option value="JPY">JPY (日本円)</option>
                             <option value="USD">USD (米ドル)</option>
                         </select>
                     </div>
-
-                    <button type="submit" class="btn btn-success btn-block">買い注文</button>
+                    <button type="submit" class="btn btn-success btn-block" style="margin-top:0.25rem;">買い注文</button>
                 </form>
             </div>
         </div>
 
-        <!-- 売り注文 -->
-        <div class="card bg-base-100 shadow-xl">
+        <!-- Sell -->
+        <div class="card">
             <div class="card-body">
-                <h2 class="card-title">💹 売り注文</h2>
-
-                <form class="space-y-4" onsubmit="executeTrade(event, 'sell')">
+                <div class="card-title">売り注文</div>
+                <form onsubmit="executeTrade(event, 'sell')">
                     <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">ティッカー</span>
-                        </label>
-                        <input type="text" name="ticker" class="input input-bordered" placeholder="7203.T" required />
+                        <label class="label"><span class="label-text">ティッカー</span></label>
+                        <input type="text" name="ticker" class="input" placeholder="7203.T" required />
                     </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">株数</span>
-                        </label>
-                        <input type="number" name="shares" class="input input-bordered" placeholder="100" required />
+                    <div class="form-row">
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">株数</span></label>
+                            <input type="number" name="shares" class="input" placeholder="100" required />
+                        </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">売却単価</span></label>
+                            <input type="number" name="price" class="input" placeholder="3000" step="0.01" />
+                        </div>
                     </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">売却単価 (円)</span>
-                        </label>
-                        <input type="number" name="price" class="input input-bordered" placeholder="3000" step="0.01" />
-                        <label class="label">
-                            <span class="label-text-alt">空欄の場合は現在値で計算</span>
-                        </label>
-                    </div>
-
+                    <span class="label-text-alt" style="display:block; margin-bottom:0.75rem;">価格を空欄にすると現在値で計算</span>
                     <button type="submit" class="btn btn-error btn-block">売り注文</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- 取引履歴 -->
-    <div class="card bg-base-100 shadow-xl mt-6">
-        <div class="card-body">
-            <h2 class="card-title">📜 取引履歴</h2>
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>日時</th>
-                            <th>銘柄</th>
-                            <th>取引</th>
-                            <th>株数</th>
-                            <th>単価</th>
-                            <th>金額</th>
-                        </tr>
-                    </thead>
-                    <tbody id="trade-history-body">
-                        <tr>
-                            <td colSpan="6" class="text-center">
-                                <button class="btn btn-sm btn-outline" onclick="loadTradeHistory()">
-                                    履歴を読み込み
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <!-- Trade history -->
+    <div style="margin-top:1.5rem;">
+        <div class="section-title">取引履歴</div>
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>日時</th><th>銘柄</th><th>区分</th><th>株数</th><th>単価</th><th>金額</th>
+                    </tr>
+                </thead>
+                <tbody id="trade-history-body">
+                    <tr>
+                        <td colspan="6" style="text-align:center;">
+                            <button class="btn btn-sm btn-outline" onclick="loadTradeHistory()">履歴を読み込み</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- 分析 -->
-<div id="tab-analyze" class="tab-content hidden">
-    <div class="space-y-4">
-        <div class="flex gap-2">
-            <button class="btn btn-primary" onclick="loadAnalysis()">🔍 集中度分析を実行</button>
-            <button class="btn btn-secondary" onclick="loadShareholderReturn()">💰 株主還元率を計算</button>
-        </div>
-
-        <div id="analysis-result" class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <p class="text-center text-gray-500">分析を実行してください</p>
-            </div>
+<!-- ── Analyze ────────────────────────────────────────────── -->
+<div id="tab-analyze" class="tab-content" style="display:none;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem;">
+        <button class="btn btn-primary" onclick="loadAnalysis()">集中度分析を実行</button>
+        <button class="btn btn-outline" onclick="loadShareholderReturn()">株主還元率を計算</button>
+    </div>
+    <div id="analysis-result" class="card">
+        <div class="card-body" style="color:var(--c-text-muted); text-align:center; padding:2.5rem 1.5rem;">
+            分析を実行してください
         </div>
     </div>
 </div>
 
-<!-- ヘルスチェック -->
-<div id="tab-health" class="tab-content hidden">
-    <div class="space-y-4">
-        <button class="btn btn-secondary" onclick="loadHealth()">💚 ヘルスチェックを実行</button>
-
-        <div id="health-result" class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <p class="text-center text-gray-500">ヘルスチェックを実行してください</p>
-            </div>
+<!-- ── Health ─────────────────────────────────────────────── -->
+<div id="tab-health" class="tab-content" style="display:none;">
+    <div style="margin-bottom:1.25rem;">
+        <button class="btn btn-primary" onclick="loadHealth()">ヘルスチェックを実行</button>
+    </div>
+    <div id="health-result" class="card">
+        <div class="card-body" style="color:var(--c-text-muted); text-align:center; padding:2.5rem 1.5rem;">
+            ヘルスチェックを実行してください
         </div>
     </div>
 </div>
@@ -231,321 +188,168 @@
 
 {% block scripts %}
 <script>
-// タブ切り替え
-document.querySelectorAll('.tab').forEach(tab => {
+// ── Tab switching ─────────────────────────────────────────
+document.querySelectorAll('.tab[data-tab]').forEach(tab => {
     tab.addEventListener('click', function() {
-        const tabName = this.dataset.tab;
-        
-        // すべてのタブを非アクティブに
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-        
-        // 選択したタブをアクティブに
+        document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.remove('tab-active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
         this.classList.add('tab-active');
-        document.getElementById('tab-' + tabName).classList.remove('hidden');
-        
-        // 自動ロード
-        if (tabName === 'snapshot') {
-            loadSnapshot();
-        } else if (tabName === 'trade') {
-            loadTradeHistory();
-        }
+        document.getElementById('tab-' + this.dataset.tab).style.display = '';
+        if (this.dataset.tab === 'snapshot') loadSnapshot();
+        if (this.dataset.tab === 'trade')    loadTradeHistory();
     });
 });
 
-// ポートフォリオスナップショットを読み込み
+// ── Snapshot ──────────────────────────────────────────────
 async function loadSnapshot() {
     const tbody = document.getElementById('snapshot-body');
-    tbody.innerHTML = '<tr><td colSpan="8" class="text-center"><div class="loading loading-spinner"></div></td></tr>';
-
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><div class="loading loading-spinner"></div></td></tr>';
     try {
-        const response = await fetch('/api/portfolio', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({action: 'snapshot'})
+        const r = await fetch('/api/portfolio', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({action:'snapshot'})
         });
-        const data = await response.json();
-
+        const data = await r.json();
         if (data.success && data.result) {
-            const result = data.result;
-            const positions = result.positions || result.holdings || [];
-            
-            // 合計計算
-            let totalValue = 0;
-            let totalCost = 0;
-            
-            if (positions.length === 0) {
-                tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-gray-500">保有銘柄がありません</td></tr>';
-                document.getElementById('total-value').textContent = '-';
-                document.getElementById('total-cost').textContent = '-';
-                document.getElementById('total-profit').textContent = '-';
-                document.getElementById('total-return').textContent = '-';
+            const positions = data.result.positions || data.result.holdings || [];
+            if (!positions.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--c-text-dim);">保有銘柄がありません</td></tr>';
+                ['total-value','total-cost','total-profit','total-return'].forEach(id => document.getElementById(id).textContent = '—');
                 return;
             }
-
-            const rows = positions.map(pos => {
-                const costPrice = pos.cost_price || pos.costPrice || 0;
-                const shares = pos.shares || 0;
-                const currentPrice = pos.current_price || pos.currentPrice || costPrice;
-                const value = pos.value || pos.value_jpy || (currentPrice * shares);
-                const cost = costPrice * shares;
-                const profit = value - cost;
-                const returnRate = cost > 0 ? ((profit / cost) * 100) : 0;
-
-                totalValue += value;
-                totalCost += cost;
-
-                return `
-                    <tr>
-                        <td class="font-bold">${pos.symbol || pos.ticker}</td>
-                        <td>${shares.toLocaleString()}</td>
-                        <td>¥${costPrice.toLocaleString()}</td>
-                        <td>¥${currentPrice.toLocaleString()}</td>
-                        <td>¥${value.toLocaleString()}</td>
-                        <td class="${profit >= 0 ? 'text-success' : 'text-error'}">
-                            ¥${profit.toLocaleString()}
-                        </td>
-                        <td class="${returnRate >= 0 ? 'text-success' : 'text-error'}">
-                            ${returnRate.toFixed(2)}%
-                        </td>
-                        <td>
-                            <a href="/report?ticker=${pos.symbol || pos.ticker}" class="btn btn-sm btn-primary">
-                                詳細
-                            </a>
-                        </td>
-                    </tr>
-                `;
+            let tv=0, tc=0;
+            tbody.innerHTML = positions.map(pos => {
+                const cp = pos.cost_price||pos.costPrice||0, sh = pos.shares||0;
+                const cur = pos.current_price||pos.currentPrice||cp;
+                const val = pos.value||pos.value_jpy||(cur*sh);
+                const cost = cp*sh, prof = val-cost, ret = cost>0?(prof/cost*100):0;
+                tv+=val; tc+=cost;
+                const cls = n => n>=0 ? 'text-success' : 'text-error';
+                return `<tr>
+                    <td style="font-weight:600;">${pos.symbol||pos.ticker}</td>
+                    <td>${sh.toLocaleString()}</td>
+                    <td>¥${cp.toLocaleString()}</td>
+                    <td>¥${cur.toLocaleString()}</td>
+                    <td>¥${val.toLocaleString()}</td>
+                    <td class="${cls(prof)}">¥${prof.toLocaleString()}</td>
+                    <td class="${cls(ret)}">${ret.toFixed(2)}%</td>
+                    <td><a href="/report?ticker=${pos.symbol||pos.ticker}" class="btn btn-sm btn-outline">詳細</a></td>
+                </tr>`;
             }).join('');
-
-            tbody.innerHTML = rows;
-
-            // 合計表示
-            const totalProfit = totalValue - totalCost;
-            const totalReturn = totalCost > 0 ? ((totalProfit / totalCost) * 100) : 0;
-
-            document.getElementById('total-value').textContent = '¥' + totalValue.toLocaleString();
-            document.getElementById('total-cost').textContent = '¥' + totalCost.toLocaleString();
-            document.getElementById('total-profit').textContent = '¥' + totalProfit.toLocaleString();
-            document.getElementById('total-profit').className = 'stat-value ' + (totalProfit >= 0 ? 'text-success' : 'text-error');
-            document.getElementById('total-return').textContent = totalReturn.toFixed(2) + '%';
-            document.getElementById('total-return').className = 'stat-value ' + (totalReturn >= 0 ? 'text-success' : 'text-error');
+            const tp=tv-tc, tr2=tc>0?(tp/tc*100):0;
+            document.getElementById('total-value').textContent = '¥'+tv.toLocaleString();
+            document.getElementById('total-cost').textContent  = '¥'+tc.toLocaleString();
+            const pe=document.getElementById('total-profit');
+            pe.textContent = '¥'+tp.toLocaleString();
+            pe.className = 'stat-value '+(tp>=0?'text-success':'text-error');
+            const re=document.getElementById('total-return');
+            re.textContent = tr2.toFixed(2)+'%';
+            re.className = 'stat-value '+(tr2>=0?'text-success':'text-error');
         } else {
-            tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-gray-500">データがありません</td></tr>';
-            document.getElementById('total-value').textContent = '-';
-            document.getElementById('total-cost').textContent = '-';
-            document.getElementById('total-profit').textContent = '-';
-            document.getElementById('total-return').textContent = '-';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--c-text-dim);">データがありません</td></tr>';
         }
-    } catch (error) {
-        tbody.innerHTML = '<tr><td colSpan="8" class="text-center text-error">エラー：' + error.message + '</td></tr>';
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;" class="text-error">エラー: ${e.message}</td></tr>`;
     }
 }
 
-// 売買実行
-async function executeTrade(event, action) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-
-    const payload = {
-        action: action,
-        ticker: formData.get('ticker'),
-        shares: parseInt(formData.get('shares')),
-        price: parseFloat(formData.get('price')),
-        currency: formData.get('currency') || 'JPY'
-    };
-
+async function executeTrade(e, action) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = { action, ticker: fd.get('ticker'), shares: parseInt(fd.get('shares')), currency: fd.get('currency')||'JPY' };
+    const price = parseFloat(fd.get('price'));
+    if (!isNaN(price)) payload.price = price;
     try {
-        const response = await fetch('/api/portfolio', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            alert('取引が完了しました：' + (data.result.message || 'OK'));
-            form.reset();
-            loadSnapshot();
-            loadTradeHistory();
-        } else {
-            alert('エラー：' + JSON.stringify(data));
-        }
-    } catch (error) {
-        alert('エラー：' + error.message);
-    }
+        const r = await fetch('/api/portfolio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data = await r.json();
+        if (data.success) { alert('取引が完了しました'); e.target.reset(); loadSnapshot(); loadTradeHistory(); }
+        else alert('エラー: ' + JSON.stringify(data));
+    } catch(err) { alert('エラー: ' + err.message); }
 }
 
-// 取引履歴読み込み
 async function loadTradeHistory() {
-    const tbody = document.getElementById('trade-history-body');
-    
-    // TODO: 取引履歴 API が実装されたら更新
-    tbody.innerHTML = '<tr><td colSpan="6" class="text-center text-gray-500">取引履歴はありません</td></tr>';
+    document.getElementById('trade-history-body').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;color:var(--c-text-dim);">取引履歴はありません</td></tr>';
 }
 
-// 集中度分析
 async function loadAnalysis() {
-    const resultDiv = document.getElementById('analysis-result');
-    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
-
+    const el = document.getElementById('analysis-result');
+    el.innerHTML = '<div class="card-body" style="text-align:center;"><div class="loading loading-spinner loading-lg"></div></div>';
     try {
-        const response = await fetch('/api/portfolio', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({action: 'analyze'})
-        });
-        const data = await response.json();
-
+        const r = await fetch('/api/portfolio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'analyze'})});
+        const data = await r.json();
         if (data.success && data.result) {
-            const r = data.result;
-            resultDiv.innerHTML = `
-                <div class="card-body">
-                    <h3 class="font-bold text-lg">🔍 集中度分析</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        <div class="stat bg-base-200 rounded-box">
-                            <div class="stat-title">HHI</div>
-                            <div class="stat-value">${r.hhi ? r.hhi.toFixed(0) : 'N/A'}</div>
-                            <div class="stat-desc">0-10000 で評価</div>
-                        </div>
-                        <div class="stat bg-base-200 rounded-box">
-                            <div class="stat-title">最大比率</div>
-                            <div class="stat-value">${r.max_weight ? r.max_weight.toFixed(1) + '%' : 'N/A'}</div>
-                        </div>
-                        <div class="stat bg-base-200 rounded-box">
-                            <div class="stat-title">銘柄数</div>
-                            <div class="stat-value">${r.num_holdings || 0}</div>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-sm text-gray-500">
-                            ${getHHIComment(r.hhi)}
-                        </p>
-                    </div>
+            const d = data.result;
+            const hhi = d.hhi, maxW = d.max_weight, n = d.num_holdings;
+            const comment = !hhi ? 'HHI は集中度指標です。2500未満: 分散, 2500-5000: 中程度, 5000超: 集中。'
+                : hhi<2500 ? '分散されたポートフォリオです。'
+                : hhi<5000 ? '中程度の集中度です。'
+                : '集中度が高い状態です。分散を検討してください。';
+            el.innerHTML = `<div class="card-body">
+                <div class="card-title">集中度分析</div>
+                <div class="stats" style="margin-top:1rem;">
+                    <div class="stat"><div class="stat-title">HHI</div><div class="stat-value">${hhi?hhi.toFixed(0):'N/A'}</div><div class="stat-desc">0–10000</div></div>
+                    <div class="stat"><div class="stat-title">最大比率</div><div class="stat-value">${maxW?maxW.toFixed(1)+'%':'N/A'}</div></div>
+                    <div class="stat"><div class="stat-title">銘柄数</div><div class="stat-value">${n||0}</div></div>
                 </div>
-            `;
+                <p style="font-size:var(--text-sm);color:var(--c-text-muted);margin-top:0.75rem;">${comment}</p>
+            </div>`;
         } else {
-            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">分析できません</div>';
+            el.innerHTML = '<div class="card-body" style="color:var(--c-text-dim);text-align:center;">分析できません</div>';
         }
-    } catch (error) {
-        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    } catch(err) {
+        el.innerHTML = `<div class="card-body" style="text-align:center;" class="text-error">エラー: ${err.message}</div>`;
     }
 }
 
-// HHI コメント
-function getHHIComment(hhi) {
-    if (!hhi) return 'HHI は集中度を示す指標です。2500 未満は分散、2500-5000 は中程度、5000 超は集中とされます。';
-    if (hhi < 2500) return '✅ 分散されたポートフォリオです';
-    if (hhi < 5000) return '⚠️ 中程度の集中度です';
-    return '❌ 集中度が高いです。分散を検討してください。';
-}
-
-// 株主還元率
 async function loadShareholderReturn() {
-    const resultDiv = document.getElementById('analysis-result');
-    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
-
+    const el = document.getElementById('analysis-result');
+    el.innerHTML = '<div class="card-body" style="text-align:center;"><div class="loading loading-spinner loading-lg"></div></div>';
     try {
-        const response = await fetch('/api/portfolio', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({action: 'shareholder_return'})
-        });
-        const data = await response.json();
-
+        const r = await fetch('/api/portfolio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'shareholder_return'})});
+        const data = await r.json();
         if (data.success && data.result) {
-            const r = data.result;
-            resultDiv.innerHTML = `
-                <div class="card-body">
-                    <h3 class="font-bold text-lg">💰 株主還元率</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div class="stat bg-base-200 rounded-box">
-                            <div class="stat-title">配当利回り (加重平均)</div>
-                            <div class="stat-value text-success">${r.dividend_yield ? r.dividend_yield.toFixed(2) + '%' : 'N/A'}</div>
-                        </div>
-                        <div class="stat bg-base-200 rounded-box">
-                            <div class="stat-title">自社株買い利回り</div>
-                            <div class="stat-value">${r.buyback_yield ? r.buyback_yield.toFixed(2) + '%' : 'N/A'}</div>
-                        </div>
-                    </div>
+            const d = data.result;
+            el.innerHTML = `<div class="card-body">
+                <div class="card-title">株主還元率</div>
+                <div class="stats" style="margin-top:1rem;">
+                    <div class="stat"><div class="stat-title">配当利回り (加重平均)</div><div class="stat-value text-success">${d.dividend_yield?d.dividend_yield.toFixed(2)+'%':'N/A'}</div></div>
+                    <div class="stat"><div class="stat-title">自社株買い利回り</div><div class="stat-value">${d.buyback_yield?d.buyback_yield.toFixed(2)+'%':'N/A'}</div></div>
                 </div>
-            `;
+            </div>`;
         } else {
-            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">計算できません</div>';
+            el.innerHTML = '<div class="card-body" style="color:var(--c-text-dim);text-align:center;">計算できません</div>';
         }
-    } catch (error) {
-        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    } catch(err) {
+        el.innerHTML = `<div class="card-body text-error" style="text-align:center;">エラー: ${err.message}</div>`;
     }
 }
 
-// ヘルスチェック
 async function loadHealth() {
-    const resultDiv = document.getElementById('health-result');
-    resultDiv.innerHTML = '<div class="card-body"><div class="text-center"><div class="loading loading-spinner"></div></div></div>';
-
+    const el = document.getElementById('health-result');
+    el.innerHTML = '<div class="card-body" style="text-align:center;"><div class="loading loading-spinner loading-lg"></div></div>';
     try {
-        const response = await fetch('/api/portfolio', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({action: 'health'})
-        });
-        const data = await response.json();
-
+        const r = await fetch('/api/portfolio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'health'})});
+        const data = await r.json();
         if (data.success && data.result) {
-            const r = data.result;
-            let alertsHtml = '';
-            
-            if (r.alerts && r.alerts.length > 0) {
-                alertsHtml = r.alerts.map(alert => `
-                    <div class="alert alert-${alert.severity === 'high' ? 'error' : alert.severity === 'medium' ? 'warning' : 'info'} mt-2">
-                        <span>${alert.message}</span>
-                    </div>
-                `).join('');
-            } else {
-                alertsHtml = '<div class="alert alert-success mt-2"><span>✅ 問題はありません</span></div>';
-            }
-
-            resultDiv.innerHTML = `
-                <div class="card-body">
-                    <h3 class="font-bold text-lg">💚 ヘルスチェック</h3>
-                    <div class="mt-4">
-                        ${alertsHtml}
-                    </div>
-                    ${r.cross_holdings && r.cross_holdings.length > 0 ? `
-                        <div class="mt-4">
-                            <h4 class="font-bold">⚠️ クロスしている可能性があります</h4>
-                            <ul class="list-disc list-inside">
-                                ${r.cross_holdings.map(h => `<li>${h}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
+            const d = data.result;
+            const alertsHtml = d.alerts&&d.alerts.length
+                ? d.alerts.map(a=>`<div class="alert alert-${a.severity==='high'?'error':a.severity==='medium'?'warning':'info'}"><span>${a.message}</span></div>`).join('')
+                : '<div class="alert alert-success"><span>問題はありません</span></div>';
+            el.innerHTML = `<div class="card-body"><div class="card-title">ヘルスチェック</div><div style="margin-top:1rem;">${alertsHtml}</div></div>`;
         } else {
-            resultDiv.innerHTML = '<div class="card-body text-center text-gray-500">チェックできません</div>';
+            el.innerHTML = '<div class="card-body" style="color:var(--c-text-dim);text-align:center;">チェックできません</div>';
         }
-    } catch (error) {
-        resultDiv.innerHTML = '<div class="card-body text-center text-error">エラー：' + error.message + '</div>';
+    } catch(err) {
+        el.innerHTML = `<div class="card-body text-error" style="text-align:center;">エラー: ${err.message}</div>`;
     }
 }
 
-// ポートフォリ오클리어
 async function clearPortfolio() {
-    if (!confirm('本当にポートフォリオをクリアしますか？この操作は取り消せません。')) {
-        return;
-    }
-
-    try {
-        // TODO: クリア API を実装
-        alert('ポートフォリオクリア機能は開発中です');
-    } catch (error) {
-        alert('エラー：' + error.message);
-    }
+    if (!confirm('本当にポートフォリオをクリアしますか？この操作は取り消せません。')) return;
+    alert('ポートフォリオクリア機能は開発中です');
 }
 
-// 初期ロード
-document.addEventListener('DOMContentLoaded', function() {
-    loadSnapshot();
-});
+document.addEventListener('DOMContentLoaded', loadSnapshot);
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 """Stock info and detail fetching (KIK-449, KIK-531)."""
 
+import asyncio
 import socket
 import time
 from typing import Any, Optional
@@ -19,6 +20,9 @@ from src.data.yahoo_client._normalize import (
     _safe_get,
     _sanitize_anomalies,
 )
+
+# Concurrency control for async requests
+_fetch_semaphore = asyncio.Semaphore(10)
 
 
 def _try_get_field(df: Any, field_names: list[str]) -> Optional[float]:
@@ -149,10 +153,11 @@ def get_stock_info(symbol: str) -> Optional[dict]:
             "roa": _safe_get(info, "returnOnAssets"),
             "profit_margin": _safe_get(info, "profitMargins"),
             "operating_margin": _safe_get(info, "operatingMargins"),
-            # Dividend (yfinance returns percentage, e.g. 2.52 for 2.52%)
+            # Dividend
             "dividend_yield": _normalize_ratio(_safe_get(info, "dividendYield")),
-            # Trailing dividend yield (already a ratio from yfinance, e.g. 0.025 = 2.5%)
             "dividend_yield_trailing": _safe_get(info, "trailingAnnualDividendYield"),
+            "dividend_rate": _safe_get(info, "dividendRate"),
+            "ex_dividend_date": _safe_get(info, "exDividendDate"),
             "payout_ratio": _safe_get(info, "payoutRatio"),
             # Growth
             "revenue_growth": _safe_get(info, "revenueGrowth"),
@@ -192,6 +197,77 @@ def get_stock_info(symbol: str) -> Optional[dict]:
         return None
 
 
+async def async_get_stock_info(symbol: str) -> Optional[dict]:
+    """Fetch basic stock information asynchronously.
+
+    Uses a semaphore to limit concurrency and asyncio.to_thread for
+    blocking yfinance calls.
+    """
+    async with _fetch_semaphore:
+        # Check cache first
+        cached = _read_cache(symbol)
+        if cached is not None:
+            return cached
+
+        try:
+            # Wrap blocking yfinance call in a thread
+            ticker = await asyncio.to_thread(yf.Ticker, symbol)
+            info = await asyncio.to_thread(lambda: ticker.info)
+
+            if not info or info.get("regularMarketPrice") is None:
+                return None
+
+            result = {
+                "symbol": symbol,
+                "name": _safe_get(info, "shortName") or _safe_get(info, "longName"),
+                "sector": _safe_get(info, "sector"),
+                "industry": _safe_get(info, "industry"),
+                "currency": _safe_get(info, "currency"),
+                # Price
+                "price": _safe_get(info, "regularMarketPrice"),
+                "market_cap": _safe_get(info, "marketCap"),
+                # Valuation
+                "per": _safe_get(info, "trailingPE"),
+                "forward_per": _safe_get(info, "forwardPE"),
+                "pbr": _safe_get(info, "priceToBook"),
+                "psr": _safe_get(info, "priceToSalesTrailing12Months"),
+                # Profitability
+                "roe": _safe_get(info, "returnOnEquity"),
+                "roa": _safe_get(info, "returnOnAssets"),
+                "profit_margin": _safe_get(info, "profitMargins"),
+                "operating_margin": _safe_get(info, "operatingMargins"),
+                # Dividend
+                "dividend_yield": _normalize_ratio(_safe_get(info, "dividendYield")),
+                "dividend_yield_trailing": _safe_get(info, "trailingAnnualDividendYield"),
+                "dividend_rate": _safe_get(info, "dividendRate"),
+                "ex_dividend_date": _safe_get(info, "exDividendDate"),
+                "payout_ratio": _safe_get(info, "payoutRatio"),
+                # Growth
+                "revenue_growth": _safe_get(info, "revenueGrowth"),
+                "earnings_growth": _safe_get(info, "earningsGrowth"),
+                # Financial health
+                "debt_to_equity": _safe_get(info, "debtToEquity"),
+                "current_ratio": _safe_get(info, "currentRatio"),
+                "free_cashflow": _safe_get(info, "freeCashflow"),
+                # Other
+                "beta": _safe_get(info, "beta"),
+                "fifty_two_week_high": _safe_get(info, "fiftyTwoWeekHigh"),
+                "fifty_two_week_low": _safe_get(info, "fiftyTwoWeekLow"),
+                "quoteType": _safe_get(info, "quoteType"),
+            }
+
+            _sanitize_anomalies(result)
+            _write_cache(symbol, result)
+            return result
+
+        except Exception as e:
+            if "timed out" in str(e).lower() or "timeout" in str(e).lower():
+                pass  # Silent on timeout for batch async
+            else:
+                print(f"[yahoo_client] Async error fetching {symbol}: {e}")
+            return None
+
+
 def get_multiple_stocks(symbols: list[str]) -> dict[str, Optional[dict]]:
     """Fetch stock info for multiple symbols with a 1-second delay between requests.
 
@@ -204,6 +280,13 @@ def get_multiple_stocks(symbols: list[str]) -> dict[str, Optional[dict]]:
         if i < len(symbols) - 1:
             time.sleep(1)
     return results
+
+
+async def async_get_multiple_stocks(symbols: list[str]) -> dict[str, Optional[dict]]:
+    """Fetch stock info for multiple symbols concurrently."""
+    tasks = [async_get_stock_info(s) for s in symbols]
+    res_list = await asyncio.gather(*tasks)
+    return dict(zip(symbols, res_list))
 
 
 # ---------------------------------------------------------------------------
@@ -441,6 +524,7 @@ def get_stock_detail(symbol: str) -> Optional[dict]:
             fund_category: Optional[str] = _safe_get(info, "category")
             fund_family: Optional[str] = _safe_get(info, "fundFamily")
             quote_type: Optional[str] = _safe_get(info, "quoteType")
+            business_summary: Optional[str] = _safe_get(info, "longBusinessSummary")
         except Exception:
             pass
 
@@ -448,6 +532,7 @@ def get_stock_detail(symbol: str) -> Optional[dict]:
         result = dict(base)  # shallow copy to avoid mutating cached base
         result.update({
             "price_history": price_history,
+            "business_summary": business_summary,
             "equity_ratio": equity_ratio,
             "operating_cashflow": operating_cashflow,
             "net_income_stmt": net_income_stmt,

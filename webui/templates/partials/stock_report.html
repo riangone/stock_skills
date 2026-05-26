@@ -116,11 +116,20 @@
                 </div>
                 <div class="bg-base-300 rounded-box p-4">
                     <div class="text-sm text-gray-500">自社株買い利回り</div>
-                    <div class="text-2xl font-bold">N/A</div>
+                    <div class="text-2xl font-bold">
+                        {{ report.valuation.buyback_yield|round(2) if report.valuation.buyback_yield else 'N/A' }}{% if report.valuation.buyback_yield %}%{% endif %}
+                    </div>
                 </div>
             </div>
             <p class="text-sm text-gray-500 mt-2">
-                合計株主還元率：{{ (report.valuation.dividend_yield * 100)|round(2) if report.valuation.dividend_yield else 'N/A' }}%
+                合計株主還元率：
+                {% if report.valuation.dividend_yield and report.valuation.buyback_yield %}
+                    {{ ((report.valuation.dividend_yield * 100) + report.valuation.buyback_yield)|round(2) }}%
+                {% elif report.valuation.dividend_yield %}
+                    {{ (report.valuation.dividend_yield * 100)|round(2) }}%
+                {% else %}
+                    N/A
+                {% endif %}
             </p>
         </div>
     </div>
@@ -129,24 +138,27 @@
     <div class="card bg-base-200 mb-4">
         <div class="card-body">
             <h3 class="font-bold text-lg">🔮 推定利回り</h3>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="text-center bg-error bg-opacity-10 rounded-box p-4">
-                    <div class="text-sm text-error font-bold">楽観シナリオ</div>
-                    <div class="text-2xl font-bold text-error">
-                        {{ report.forecast.optimistic|round(1) if report.forecast.optimistic else 'N/A' }}%
+            <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+                <div class="stat">
+                    <div class="stat-title text-success font-bold">📈 楽観シナリオ</div>
+                    <div class="stat-value text-success">
+                        {{ report.forecast.optimistic|round(1) if report.forecast.optimistic is not none else 'N/A' }}{% if report.forecast.optimistic is not none %}%{% endif %}
                     </div>
+                    <div class="stat-desc">アナリスト高値目標ベース</div>
                 </div>
-                <div class="text-center bg-primary bg-opacity-10 rounded-box p-4">
-                    <div class="text-sm text-primary font-bold">ベースシナリオ</div>
-                    <div class="text-2xl font-bold text-primary">
-                        {{ report.forecast.base|round(1) if report.forecast.base else 'N/A' }}%
+                <div class="stat">
+                    <div class="stat-title font-bold">📊 ベースシナリオ</div>
+                    <div class="stat-value">
+                        {{ report.forecast.base|round(1) if report.forecast.base is not none else 'N/A' }}{% if report.forecast.base is not none %}%{% endif %}
                     </div>
+                    <div class="stat-desc">アナリスト平均目標ベース</div>
                 </div>
-                <div class="text-center bg-success bg-opacity-10 rounded-box p-4">
-                    <div class="text-sm text-success font-bold">悲観シナリオ</div>
-                    <div class="text-2xl font-bold text-success">
-                        {{ report.forecast.pessimistic|round(1) if report.forecast.pessimistic else 'N/A' }}%
+                <div class="stat">
+                    <div class="stat-title text-warning font-bold">📉 悲観シナリオ</div>
+                    <div class="stat-value text-warning">
+                        {{ report.forecast.pessimistic|round(1) if report.forecast.pessimistic is not none else 'N/A' }}{% if report.forecast.pessimistic is not none %}%{% endif %}
                     </div>
+                    <div class="stat-desc">アナリスト低値目標ベース</div>
                 </div>
             </div>
         </div>

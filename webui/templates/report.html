@@ -1,185 +1,112 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="breadcrumbs mb-4">
+<div class="breadcrumbs">
     <ul>
         <li><a href="/">ホーム</a></li>
         <li>個別銘柄レポート</li>
     </ul>
 </div>
 
-<h1 class="text-3xl font-bold mb-6">📊 個別銘柄レポート</h1>
+<h1 class="page-title">個別銘柄レポート</h1>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- 検索フォーム -->
-    <div>
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h2 class="card-title">銘柄検索</h2>
-
-                <form
-                    hx-post="/partials/stock-report"
-                    hx-target="#report-result"
-                    hx-indicator="#loading"
-                    class="space-y-4"
-                >
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">ティッカーシンボル</span>
-                        </label>
-                        <div class="join">
-                            <input
-                                type="text"
-                                name="ticker"
-                                id="ticker-input"
-                                class="input input-bordered join-item flex-1"
-                                placeholder="例：7203.T, AAPL, 9984.T"
-                                value="{{ default_ticker or '' }}"
-                                required
-                            />
-                            <button type="submit" class="btn btn-primary join-item">
-                                分析
-                            </button>
-                        </div>
-                        <label class="label">
-                            <span class="label-text-alt">日本株：7203.T, 9984.T など / 米国株：AAPL, NVDA など</span>
-                        </label>
-                    </div>
-                </form>
-                
-                <!-- クイックアクセス -->
-                <div class="divider">クイックアクセス</div>
-
-                <div class="flex flex-wrap gap-2">
-                    <form hx-post="/partials/stock-report" hx-target="#report-result" hx-indicator="#loading" class="inline">
-                        <input type="hidden" name="ticker" value="7203.T" />
-                        <button type="submit" class="btn btn-sm btn-outline">
-                            🇯🇵 トヨタ (7203.T)
-                        </button>
-                    </form>
-                    <form hx-post="/partials/stock-report" hx-target="#report-result" hx-indicator="#loading" class="inline">
-                        <input type="hidden" name="ticker" value="9984.T" />
-                        <button type="submit" class="btn btn-sm btn-outline">
-                            🇯🇵 ソフトバンク (9984.T)
-                        </button>
-                    </form>
-                    <form hx-post="/partials/stock-report" hx-target="#report-result" hx-indicator="#loading" class="inline">
-                        <input type="hidden" name="ticker" value="AAPL" />
-                        <button type="submit" class="btn btn-sm btn-outline">
-                            🇺🇸 Apple (AAPL)
-                        </button>
-                    </form>
-                    <form hx-post="/partials/stock-report" hx-target="#report-result" hx-indicator="#loading" class="inline">
-                        <input type="hidden" name="ticker" value="NVDA" />
-                        <button type="submit" class="btn btn-sm btn-outline">
-                            🇺🇸 NVIDIA (NVDA)
-                        </button>
-                    </form>
-                </div>
-            </div>
+<!-- ── Search bar ─────────────────────────────────────────── -->
+<div class="report-search-bar">
+    <form
+        hx-post="/partials/stock-report"
+        hx-target="#report-result"
+        hx-indicator="#loading"
+        id="report-form"
+    >
+        <div class="join" style="width:100%;">
+            <input
+                type="text"
+                name="ticker"
+                id="ticker-input"
+                class="input join-item"
+                style="flex:1; min-width:0;"
+                placeholder="ティッカー例: 7203.T, AAPL, 9984.T"
+                value="{{ default_ticker or '' }}"
+                required
+            />
+            <button type="submit" class="btn btn-primary join-item">分析</button>
         </div>
-        
-        <!-- 分析項目の説明 -->
-        <div class="card bg-base-100 shadow-xl mt-4">
-            <div class="card-body">
-                <h2 class="card-title">分析項目</h2>
-                <ul class="menu">
-                    <li>
-                        <a>
-                            <span class="text-primary">📈</span>
-                            <div>
-                                <div class="font-bold">バリュエーション</div>
-                                <div class="text-sm text-gray-500">PER, PBR, 配当利回り，ROE, 利益成長率</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a>
-                            <span class="text-secondary">🎯</span>
-                            <div>
-                                <div class="font-bold">割安度判定</div>
-                                <div class="text-sm text-gray-500">0-100 点スコアで割安度を評価</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a>
-                            <span class="text-accent">💰</span>
-                            <div>
-                                <div class="font-bold">株主還元</div>
-                                <div class="text-sm text-gray-500">配当 + 自社株買いの総還元率</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a>
-                            <span class="text-info">🔮</span>
-                            <div>
-                                <div class="font-bold">推定利回り</div>
-                                <div class="text-sm text-gray-500">楽観・ベース・悲観シナリオ</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a>
-                            <span class="text-warning">⚠️</span>
-                            <div>
-                                <div class="font-bold">バリュートラップ</div>
-                                <div class="text-sm text-gray-500">割安の罠を検出</div>
-                            </div>
-                        </a>
-                    </li>
-                </ul>
+    </form>
+
+    <!-- Quick picks -->
+    <div class="quick-tickers">
+        {% set quick = [('7203.T','トヨタ'),('9984.T','ソフトバンク'),('AAPL','Apple'),('NVDA','NVIDIA')] %}
+        {% for sym, name in quick %}
+        <form hx-post="/partials/stock-report" hx-target="#report-result" hx-indicator="#loading" class="inline">
+            <input type="hidden" name="ticker" value="{{ sym }}" />
+            <button type="submit" class="btn btn-sm btn-outline">{{ name }}</button>
+        </form>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="report-layout">
+
+    <!-- ── Report area ────────────────────────────────────── -->
+    <div class="report-main">
+        <div id="loading" class="htmx-indicator" style="display:flex; align-items:center; gap:0.75rem; padding:3rem 0; justify-content:center;">
+            <div class="loading loading-spinner loading-lg"></div>
+            <span style="font-size:var(--text-sm); color:var(--c-text-muted);">分析中...</span>
+        </div>
+
+        <div id="report-result">
+            <div class="alert alert-info">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>ティッカーシンボルを入力して分析を実行してください。</span>
             </div>
         </div>
     </div>
-    
-    <!-- レポート表示 -->
-    <div>
-        <div class="card bg-base-100 shadow-xl">
+
+    <!-- ── Sidebar: analysis items ────────────────────────── -->
+    <aside class="report-sidebar">
+        <div class="card">
             <div class="card-body">
-                <h2 class="card-title">分析レポート</h2>
-                
-                <!-- ローディング表示 -->
-                <div id="loading" class="htmx-indicator flex justify-center items-center py-12">
-                    <div class="loading loading-spinner loading-lg"></div>
-                    <span class="ml-4">分析中...</span>
-                </div>
-                
-                <!-- レポート表示エリア -->
-                <div id="report-result" class="mt-4">
-                    <div class="alert alert-info">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>ティッカーシンボルを入力して分析を実行してください。</span>
+                <div class="card-title">分析項目</div>
+                <div class="analysis-items">
+                    <div class="analysis-item">
+                        <div class="analysis-item-label">バリュエーション</div>
+                        <div class="analysis-item-desc">PER / PBR / 配当利回り / ROE / 利益成長率</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-item-label">割安度判定</div>
+                        <div class="analysis-item-desc">0–100 点スコアで割安度を評価</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-item-label">株主還元</div>
+                        <div class="analysis-item-desc">配当 + 自社株買いの総還元率</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-item-label">推定利回り</div>
+                        <div class="analysis-item-desc">楽観・ベース・悲観シナリオ</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="analysis-item-label">バリュートラップ</div>
+                        <div class="analysis-item-desc">割安の罠を検出</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </aside>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// URL パラメータから ticker を取得して自動分析
 document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const ticker = urlParams.get('ticker');
-    
+    const ticker = new URLSearchParams(window.location.search).get('ticker');
     if (ticker) {
-        // フォームの ticker 入力欄を更新
         const input = document.getElementById('ticker-input');
-        if (input) {
-            input.value = ticker;
-        }
-        
-        // 自動分析実行
+        if (input) input.value = ticker;
         const form = document.querySelector('form[hx-post="/partials/stock-report"]');
-        if (form) {
-            form.requestSubmit();
-        }
+        if (form) form.requestSubmit();
     }
 });
 </script>

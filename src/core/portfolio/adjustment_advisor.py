@@ -214,6 +214,28 @@ def evaluate_position_rules(
                 rule_ids=["P8"],
             ))
 
+        # P11: Tax-Loss Harvesting (PnL < -15%)
+        pnl_pct = pos.get("pnl_pct", 0)
+        if pnl_pct < -0.15:
+            # If also alerted, escalate to SWAP
+            if alert_level in ("caution", "exit"):
+                actions.append(Action(
+                    type=ActionType.SWAP,
+                    urgency=Urgency.MEDIUM,
+                    target=symbol,
+                    reasons=[f"損出し(TLH)候補: 含み損 {pnl_pct*100:.1f}% + {alert_level.upper()}"],
+                    rule_ids=["P11"],
+                    screening_hint="同セクター優良株",
+                ))
+            else:
+                actions.append(Action(
+                    type=ActionType.FLAG,
+                    urgency=Urgency.LOW,
+                    target=symbol,
+                    reasons=[f"損出し(TLH)候補: 含み損 {pnl_pct*100:.1f}%"],
+                    rule_ids=["P11"],
+                ))
+
     # P9: High correlation pairs (optional)
     if correlation_pairs:
         for pair in correlation_pairs:

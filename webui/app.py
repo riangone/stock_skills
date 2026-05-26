@@ -4,8 +4,8 @@
 FastAPI + HTMX + DaisyUI で構成。
 """
 
-from fastapi import FastAPI, Request, Form, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, HTTPException, Query, Depends
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -13,6 +13,12 @@ from typing import Optional, List, Dict, Any
 import asyncio
 from pathlib import Path
 import json
+
+from webui.auth import (
+    verify_password, set_session_cookie, clear_session_cookie,
+    get_current_user, require_auth,
+    AUTH_USERNAME, AUTH_PASSWORD_HASH, AUTH_ENABLED
+)
 
 from src.core.screening.screener import QueryScreener, build_default_registry
 from src.core.portfolio.portfolio_query import get_snapshot, get_portfolio_shareholder_return
@@ -77,6 +83,18 @@ class Templates:
 
 templates = Templates(env)
 app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+
+# 307 リダイレクト HTTPException を実際の RedirectResponse に変換するハンドラー
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code in (307, 302, 301) and exc.headers and "Location" in exc.headers:
+        return RedirectResponse(url=exc.headers["Location"], status_code=exc.status_code)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 
 # ==============
@@ -185,26 +203,52 @@ def run_screening(region: str, strategy: str, **kwargs) -> Dict[str, Any]:
     }
 
 
+def _normalize_ticker(ticker: str) -> str:
+    """ティッカーシンボルを正規化する。
+
+    純粋な数字のみ（例: 9008）→ 日本株として .T を付与（9008.T）
+    """
+    ticker = ticker.strip().upper()
+    if ticker.isdigit():
+        ticker = ticker + ".T"
+    return ticker
+
+
 def generate_stock_report(ticker: str) -> Dict[str, Any]:
     """個別銘柄レポートを生成"""
     import yfinance as yf
 
+    ticker = _normalize_ticker(ticker)
+
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
+        # データが実質的に空の場合（存在しないティッカー）
+        if not info or info.get("regularMarketPrice") is None and info.get("currentPrice") is None and info.get("shortName") is None:
+            return {
+                "success": False,
+                "error": f"銘柄 '{ticker}' のデータが見つかりません。ティッカーシンボルを確認してください。"
+            }
     except Exception as e:
         return {
             "success": False,
             "error": f"銘柄データの取得に失敗しました：{str(e)}"
         }
 
-    # バリュエーションデータ
+    def _to_ratio(value):
+        """yfinance が % 形式（>1）で返す場合に比率形式へ変換（例: 3.35 → 0.0335）。"""
+        if value is not None and value > 1:
+            return value / 100
+        return value
+
+    # バリュエーションデータ（配当利回りは比率形式に正規化）
     valuation = {
         "pe_ratio": info.get("trailingPE"),
         "pb_ratio": info.get("priceToBook"),
-        "dividend_yield": info.get("dividendYield"),
+        "dividend_yield": _to_ratio(info.get("dividendYield")),
         "roe": info.get("returnOnEquity"),
-        "earnings_growth": info.get("earningsGrowth")
+        "earnings_growth": info.get("earningsGrowth"),
+        "buyback_yield": None,
     }
 
     # 割安度判定（簡易版）
@@ -213,9 +257,9 @@ def generate_stock_report(ticker: str) -> Dict[str, Any]:
         score += 20
     if valuation["pb_ratio"] and valuation["pb_ratio"] < 1:
         score += 15
-    if valuation["dividend_yield"] and valuation["dividend_yield"] > 0.03:
+    if valuation["dividend_yield"] and valuation["dividend_yield"] > 0.03:  # 3% 超
         score += 15
-    if valuation["roe"] and valuation["roe"] > 0.15:
+    if valuation["roe"] and valuation["roe"] > 0.15:  # ROE 15% 超
         score += 10
 
     score = min(100, max(0, score))
@@ -233,12 +277,49 @@ def generate_stock_report(ticker: str) -> Dict[str, Any]:
 
     health = {"score": score, "label": label}
 
-    # 推定利回り（簡易版）
-    forecast = {
-        "base": None,
-        "optimistic": None,
-        "pessimistic": None
-    }
+    # 推定利回り・自社株買い利回り（yahoo_client.get_stock_detail + estimate_stock_return）
+    forecast = {"base": None, "optimistic": None, "pessimistic": None}
+    try:
+        from src.data import yahoo_client as _yc
+        stock_detail = _yc.get_stock_detail(ticker)
+
+        # Fallback: get_stock_detail が失敗またはprice_historyなしの場合、
+        # 既に取得済みの stock Ticker から直接price_historyを補完する
+        if not stock_detail or not stock_detail.get("price_history"):
+            try:
+                hist = stock.history(period="2y")
+                if hist is not None and not hist.empty and "Close" in hist.columns:
+                    price_history = [float(v) for v in hist["Close"].tolist()]
+                    if stock_detail is None:
+                        stock_detail = {}
+                    stock_detail.setdefault("price_history", price_history)
+                    stock_detail.setdefault(
+                        "price",
+                        info.get("currentPrice") or info.get("regularMarketPrice")
+                    )
+                    stock_detail.setdefault(
+                        "dividend_yield",
+                        _to_ratio(info.get("dividendYield"))
+                    )
+            except Exception:
+                pass
+
+        if stock_detail:
+            est = estimate_stock_return(ticker, stock_detail)
+            forecast = {
+                "base": est.get("base"),
+                "optimistic": est.get("optimistic"),
+                "pessimistic": est.get("pessimistic"),
+            }
+            # 推定利回りを % 表示に変換（例: 0.05 → 5.0）
+            for key in ("base", "optimistic", "pessimistic"):
+                if forecast[key] is not None:
+                    forecast[key] = round(forecast[key] * 100, 1)
+            buyback = est.get("buyback_yield")
+            if buyback is not None:
+                valuation["buyback_yield"] = round(buyback * 100, 2)
+    except Exception:
+        pass
 
     # バリュートラップ判定（簡易版）
     value_trap = {"is_trap": False, "reason": ""}
@@ -258,15 +339,60 @@ def generate_stock_report(ticker: str) -> Dict[str, Any]:
 
 
 # ==============
+# 認証ルート
+# ==============
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, next: str = "/"):
+    """ログインページ"""
+    if get_current_user(request):
+        return RedirectResponse(url="/", status_code=302)
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "next": next,
+        "error": None
+    })
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    next: str = Form("/")
+):
+    """ログイン処理"""
+    if username == AUTH_USERNAME and verify_password(password, AUTH_PASSWORD_HASH):
+        redirect_url = next if next.startswith("/") else "/"
+        response = RedirectResponse(url=redirect_url, status_code=302)
+        set_session_cookie(response, username)
+        return response
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "next": next,
+        "error": "ユーザー名またはパスワードが違います"
+    })
+
+
+@app.get("/logout")
+async def logout():
+    """ログアウト処理"""
+    response = RedirectResponse(url="/login", status_code=302)
+    clear_session_cookie(response)
+    return response
+
+
+# ==============
 # ページルート
 # ==============
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, user: str = Depends(require_auth)):
     """ダッシュボードページ"""
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "title": "Stock Skills WebUI"
+        "title": "Stock Skills WebUI",
+        "current_user": user
     })
 
 
@@ -275,7 +401,8 @@ async def screening_page(
     request: Request,
     region: Optional[str] = Query(None),
     strategy: Optional[str] = Query(None),
-    theme: Optional[str] = Query(None)
+    theme: Optional[str] = Query(None),
+    user: str = Depends(require_auth)
 ):
     """スクリーニングページ"""
     return templates.TemplateResponse("screening.html", {
@@ -283,48 +410,53 @@ async def screening_page(
         "title": "株式スクリーニング",
         "default_region": region,
         "default_strategy": strategy,
-        "default_theme": theme
+        "default_theme": theme,
+        "current_user": user
     })
 
 
 @app.get("/report", response_class=HTMLResponse)
-async def report_page(request: Request, ticker: Optional[str] = Query(None)):
+async def report_page(request: Request, ticker: Optional[str] = Query(None), user: str = Depends(require_auth)):
     """個別銘柄レポートページ"""
     return templates.TemplateResponse("report.html", {
         "request": request,
         "title": "個別銘柄レポート",
-        "default_ticker": ticker
+        "default_ticker": ticker,
+        "current_user": user
     })
 
 
 @app.get("/portfolio", response_class=HTMLResponse)
-async def portfolio_page(request: Request):
+async def portfolio_page(request: Request, user: str = Depends(require_auth)):
     """ポートフォリオ管理ページ"""
     return templates.TemplateResponse("portfolio.html", {
         "request": request,
-        "title": "ポートフォリオ管理"
+        "title": "ポートフォリオ管理",
+        "current_user": user
     })
 
 
 @app.get("/watchlist", response_class=HTMLResponse)
-async def watchlist_page(request: Request):
+async def watchlist_page(request: Request, user: str = Depends(require_auth)):
     """ウォッチリストページ"""
     return templates.TemplateResponse("watchlist.html", {
         "request": request,
-        "title": "ウォッチリスト"
+        "title": "ウォッチリスト",
+        "current_user": user
     })
 
 
 @app.get("/config", response_class=HTMLResponse)
-async def config_page(request: Request):
+async def config_page(request: Request, user: str = Depends(require_auth)):
     """API 設定ページ"""
     config = load_env()
-    status = get_config_status()
+    cfg_status = get_config_status()
     return templates.TemplateResponse("config.html", {
         "request": request,
         "title": "API 設定",
         "config": config,
-        "status": status
+        "status": cfg_status,
+        "current_user": user
     })
 
 

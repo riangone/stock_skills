@@ -1,330 +1,253 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="breadcrumbs mb-4">
+<div class="breadcrumbs">
     <ul>
         <li><a href="/">ホーム</a></li>
         <li>株式スクリーニング</li>
     </ul>
 </div>
 
-<h1 class="text-3xl font-bold mb-6">🔍 株式スクリーニング</h1>
+<h1 class="page-title">株式スクリーニング</h1>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- スクリーニングフォーム -->
-    <div class="lg:col-span-1">
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h2 class="card-title">スクリーニング条件</h2>
+<div class="screening-layout">
+    <!-- ── Filter panel ──────────────────────────────────── -->
+    <aside class="filter-panel">
 
-                <form
-                    hx-post="/partials/screening-results"
-                    hx-target="#results"
-                    hx-indicator="#loading"
-                    hx-swap="innerHTML"
-                    class="space-y-4"
-                    id="screening-form"
-                >
-                    <!-- 地域選択 -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">地域</span>
-                        </label>
-                        <select name="region" class="select select-bordered" id="region">
-                            <option value="japan" {{ 'selected' if default_region == 'japan' else '' }}>🇯🇵 日本</option>
-                            <option value="us" {{ 'selected' if default_region == 'us' else '' }}>🇺🇸 米国</option>
-                            <option value="asean" {{ 'selected' if default_region == 'asean' else '' }}>🌏 ASEAN</option>
-                            <option value="europe" {{ 'selected' if default_region == 'europe' else '' }}>🇪🇺 欧州</option>
-                            <option value="emerging" {{ 'selected' if default_region == 'emerging' else '' }}>📈 新興国</option>
-                        </select>
-                    </div>
+        <!-- Mobile: collapsible -->
+        <details class="filter-details" id="filter-details">
+            <summary class="filter-summary">
+                <span>絞り込み条件</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </summary>
 
-                    <!-- 戦略選択 -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">戦略</span>
-                        </label>
-                        <select name="strategy" class="select select-bordered" id="strategy">
-                            <option value="value" {{ 'selected' if default_strategy == 'value' else '' }}>バリュー (割安)</option>
-                            <option value="high-dividend" {{ 'selected' if default_strategy == 'high-dividend' else '' }}>高配当</option>
-                            <option value="growth" {{ 'selected' if default_strategy == 'growth' else '' }}>成長</option>
-                            <option value="growth-value" {{ 'selected' if default_strategy == 'growth-value' else '' }}>成長割安</option>
-                            <option value="deep-value" {{ 'selected' if default_strategy == 'deep-value' else '' }}>深層バリュー</option>
-                            <option value="quality" {{ 'selected' if default_strategy == 'quality' else '' }}>クオリティ</option>
-                            <option value="pullback" {{ 'selected' if default_strategy == 'pullback' else '' }}>押し目</option>
-                            <option value="alpha" {{ 'selected' if default_strategy == 'alpha' else '' }}>アルファ</option>
-                            <option value="trending" {{ 'selected' if default_strategy == 'trending' else '' }}>トレンド</option>
-                            <option value="long-term" {{ 'selected' if default_strategy == 'long-term' else '' }}>長期投資</option>
-                            <option value="shareholder-return" {{ 'selected' if default_strategy == 'shareholder-return' else '' }}>株主還元</option>
-                            <option value="high-growth" {{ 'selected' if default_strategy == 'high-growth' else '' }}>高成長</option>
-                            <option value="small-cap-growth" {{ 'selected' if default_strategy == 'small-cap-growth' else '' }}>小型株成長</option>
-                            <option value="contrarian" {{ 'selected' if default_strategy == 'contrarian' else '' }}>逆張り</option>
-                            <option value="momentum" {{ 'selected' if default_strategy == 'momentum' else '' }}>モメンタム</option>
-                        </select>
-                    </div>
-
-                    <!-- テーマ選択 -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">テーマ (オプション)</span>
-                        </label>
-                        <select name="theme" class="select select-bordered" id="theme">
-                            <option value="">なし</option>
-                            <option value="ai" {{ 'selected' if default_theme == 'ai' else '' }}>AI・人工知能</option>
-                            <option value="ev" {{ 'selected' if default_theme == 'ev' else '' }}>EV・電気自動車</option>
-                            <option value="semiconductor" {{ 'selected' if default_theme == 'semiconductor' else '' }}>半導体</option>
-                            <option value="biotech" {{ 'selected' if default_theme == 'biotech' else '' }}>バイオテクノロジー</option>
-                            <option value="renewable" {{ 'selected' if default_theme == 'renewable' else '' }}>再生可能エネルギー</option>
-                            <option value="fintech" {{ 'selected' if default_theme == 'fintech' else '' }}>フィンテック</option>
-                            <option value="healthcare" {{ 'selected' if default_theme == 'healthcare' else '' }}>ヘルスケア</option>
-                            <option value="consumer" {{ 'selected' if default_theme == 'consumer' else '' }}>消費財</option>
-                        </select>
-                    </div>
-
-                    <!-- セクター選択 -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">セクター (オプション)</span>
-                        </label>
-                        <select name="sector" class="select select-bordered" id="sector">
-                            <option value="">なし</option>
-                            <option value="Technology">テクノロジー</option>
-                            <option value="Healthcare">ヘルスケア</option>
-                            <option value="Financials">金融</option>
-                            <option value="Consumer Discretionary">景気循環株</option>
-                            <option value="Industrials">産業</option>
-                            <option value="Communication Services">通信サービス</option>
-                            <option value="Consumer Staples">生活必需品</option>
-                            <option value="Energy">エネルギー</option>
-                            <option value="Materials">素材</option>
-                            <option value="Real Estate">不動産</option>
-                            <option value="Utilities">公益事業</option>
-                        </select>
-                    </div>
-
-                    <!-- 詳細オプション -->
-                    <div class="divider">詳細条件</div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer">
-                            <span class="label-text">押し目買い</span>
-                            <input type="checkbox" name="with_pullback" class="checkbox" id="with_pullback" />
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">表示件数</span>
-                        </label>
-                        <input type="number" name="top" class="input input-bordered" value="20" min="1" max="100" id="top" />
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">最低時価総額 (億円)</span>
-                        </label>
-                        <input type="number" name="min_market_cap" class="input input-bordered" placeholder="例：1000" step="0.1" id="min_market_cap" />
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">最大 PER (倍)</span>
-                        </label>
-                        <input type="number" name="max_pe" class="input input-bordered" placeholder="例：15" step="0.1" id="max_pe" />
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">最大 PBR (倍)</span>
-                        </label>
-                        <input type="number" name="max_pb" class="input input-bordered" placeholder="例：1.5" step="0.1" id="max_pb" />
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">最低配当利回り (%)</span>
-                        </label>
-                        <input type="number" name="min_dividend_yield" class="input input-bordered" placeholder="例：3" step="0.1" id="min_dividend_yield" />
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block mt-4">
-                        スクリーニング実行
-                    </button>
-                </form>
-
-                <!-- クイックプリセット -->
-                <div class="divider">クイックプリセット</div>
-                <div class="flex flex-wrap gap-2">
-                    <button class="btn btn-sm btn-outline" onclick="applyPreset('japan_value')">日本バリュー</button>
-                    <button class="btn btn-sm btn-outline" onclick="applyPreset('japan_dividend')">日本高配当</button>
-                    <button class="btn btn-sm btn-outline" onclick="applyPreset('us_growth')">米国成長</button>
-                    <button class="btn btn-sm btn-outline" onclick="applyPreset('us_dividend')">米国高配当</button>
+            <form
+                hx-post="/partials/screening-results"
+                hx-target="#results"
+                hx-indicator="#loading"
+                hx-swap="innerHTML"
+                id="screening-form"
+                class="filter-form"
+            >
+                <div class="form-control">
+                    <label class="label"><span class="label-text">地域</span></label>
+                    <select name="region" class="select" id="region">
+                        <option value="japan"    {{ 'selected' if default_region == 'japan'    else '' }}>日本</option>
+                        <option value="us"       {{ 'selected' if default_region == 'us'       else '' }}>米国</option>
+                        <option value="asean"    {{ 'selected' if default_region == 'asean'    else '' }}>ASEAN</option>
+                        <option value="europe"   {{ 'selected' if default_region == 'europe'   else '' }}>欧州</option>
+                        <option value="emerging" {{ 'selected' if default_region == 'emerging' else '' }}>新興国</option>
+                    </select>
                 </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">戦略</span></label>
+                    <select name="strategy" class="select" id="strategy">
+                        <option value="value"              {{ 'selected' if default_strategy == 'value'              else '' }}>バリュー (割安)</option>
+                        <option value="high-dividend"      {{ 'selected' if default_strategy == 'high-dividend'      else '' }}>高配当</option>
+                        <option value="growth"             {{ 'selected' if default_strategy == 'growth'             else '' }}>成長</option>
+                        <option value="growth-value"       {{ 'selected' if default_strategy == 'growth-value'       else '' }}>成長割安</option>
+                        <option value="deep-value"         {{ 'selected' if default_strategy == 'deep-value'         else '' }}>深層バリュー</option>
+                        <option value="quality"            {{ 'selected' if default_strategy == 'quality'            else '' }}>クオリティ</option>
+                        <option value="pullback"           {{ 'selected' if default_strategy == 'pullback'           else '' }}>押し目</option>
+                        <option value="alpha"              {{ 'selected' if default_strategy == 'alpha'              else '' }}>アルファ</option>
+                        <option value="trending"           {{ 'selected' if default_strategy == 'trending'           else '' }}>トレンド</option>
+                        <option value="long-term"          {{ 'selected' if default_strategy == 'long-term'          else '' }}>長期投資</option>
+                        <option value="shareholder-return" {{ 'selected' if default_strategy == 'shareholder-return' else '' }}>株主還元</option>
+                        <option value="high-growth"        {{ 'selected' if default_strategy == 'high-growth'        else '' }}>高成長</option>
+                        <option value="small-cap-growth"   {{ 'selected' if default_strategy == 'small-cap-growth'   else '' }}>小型株成長</option>
+                        <option value="contrarian"         {{ 'selected' if default_strategy == 'contrarian'         else '' }}>逆張り</option>
+                        <option value="momentum"           {{ 'selected' if default_strategy == 'momentum'           else '' }}>モメンタム</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">テーマ (オプション)</span></label>
+                    <select name="theme" class="select" id="theme">
+                        <option value="">なし</option>
+                        <option value="ai"            {{ 'selected' if default_theme == 'ai'            else '' }}>AI・人工知能</option>
+                        <option value="ev"            {{ 'selected' if default_theme == 'ev'            else '' }}>EV・電気自動車</option>
+                        <option value="semiconductor" {{ 'selected' if default_theme == 'semiconductor' else '' }}>半導体</option>
+                        <option value="biotech"       {{ 'selected' if default_theme == 'biotech'       else '' }}>バイオテクノロジー</option>
+                        <option value="renewable"     {{ 'selected' if default_theme == 'renewable'     else '' }}>再生可能エネルギー</option>
+                        <option value="fintech"       {{ 'selected' if default_theme == 'fintech'       else '' }}>フィンテック</option>
+                        <option value="healthcare"    {{ 'selected' if default_theme == 'healthcare'    else '' }}>ヘルスケア</option>
+                        <option value="consumer"      {{ 'selected' if default_theme == 'consumer'      else '' }}>消費財</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">セクター (オプション)</span></label>
+                    <select name="sector" class="select" id="sector">
+                        <option value="">なし</option>
+                        <option value="Technology">テクノロジー</option>
+                        <option value="Healthcare">ヘルスケア</option>
+                        <option value="Financials">金融</option>
+                        <option value="Consumer Discretionary">景気循環株</option>
+                        <option value="Industrials">産業</option>
+                        <option value="Communication Services">通信サービス</option>
+                        <option value="Consumer Staples">生活必需品</option>
+                        <option value="Energy">エネルギー</option>
+                        <option value="Materials">素材</option>
+                        <option value="Real Estate">不動産</option>
+                        <option value="Utilities">公益事業</option>
+                    </select>
+                </div>
+
+                <div class="divider">詳細条件</div>
+
+                <div class="form-control">
+                    <label class="label" style="cursor:pointer;">
+                        <span class="label-text">押し目買い</span>
+                        <input type="checkbox" name="with_pullback" class="checkbox" id="with_pullback" />
+                    </label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">表示件数</span></label>
+                    <input type="number" name="top" class="input" value="20" min="1" max="100" id="top" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">最低時価総額 (億円)</span></label>
+                        <input type="number" name="min_market_cap" class="input" placeholder="1000" step="0.1" id="min_market_cap" />
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">最大 PER</span></label>
+                        <input type="number" name="max_pe" class="input" placeholder="15" step="0.1" id="max_pe" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">最大 PBR</span></label>
+                        <input type="number" name="max_pb" class="input" placeholder="1.5" step="0.1" id="max_pb" />
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">最低配当利回り (%)</span></label>
+                        <input type="number" name="min_dividend_yield" class="input" placeholder="3" step="0.1" id="min_dividend_yield" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:0.5rem;">
+                    スクリーニング実行
+                </button>
+            </form>
+        </details>
+
+        <!-- Quick presets -->
+        <div class="preset-strip">
+            <button class="btn btn-sm btn-outline" onclick="applyPreset('japan_value')">日本バリュー</button>
+            <button class="btn btn-sm btn-outline" onclick="applyPreset('japan_dividend')">日本高配当</button>
+            <button class="btn btn-sm btn-outline" onclick="applyPreset('us_growth')">米国成長</button>
+            <button class="btn btn-sm btn-outline" onclick="applyPreset('us_dividend')">米国高配当</button>
+        </div>
+    </aside>
+
+    <!-- ── Results panel ─────────────────────────────────── -->
+    <section class="results-panel">
+        <div class="results-header">
+            <span class="section-title" style="margin-bottom:0;">スクリーニング結果</span>
+            <span id="result-info" style="font-size:var(--text-xs); color:var(--c-text-dim);"></span>
+        </div>
+
+        <div id="loading" class="htmx-indicator" style="display:flex; align-items:center; gap:0.75rem; padding:3rem 0; justify-content:center;">
+            <div class="loading loading-spinner loading-lg"></div>
+            <span style="font-size:var(--text-sm); color:var(--c-text-muted);">スクリーニング中...</span>
+        </div>
+
+        <div id="results">
+            <div class="alert alert-info">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>条件を選択してスクリーニングを実行してください。</span>
             </div>
         </div>
-    </div>
-
-    <!-- 結果表示 -->
-    <div class="lg:col-span-2">
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <div class="flex justify-between items-center">
-                    <h2 class="card-title">スクリーニング結果</h2>
-                    <div id="result-info" class="text-sm text-gray-500"></div>
-                </div>
-
-                <!-- ローディング表示 -->
-                <div id="loading" class="htmx-indicator flex justify-center items-center py-12">
-                    <div class="loading loading-spinner loading-lg"></div>
-                    <span class="ml-4">スクリーニング中...</span>
-                </div>
-
-                <!-- 結果表示エリア -->
-                <div id="results" class="mt-4">
-                    <div class="alert alert-info">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>左側のフォームで条件を選択し、スクリーニングを実行してください。</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// URL パラメータからデフォルト値を設定
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
-    
-    if (urlParams.get('region')) {
-        document.getElementById('region').value = urlParams.get('region');
-    }
-    if (urlParams.get('strategy')) {
-        document.getElementById('strategy').value = urlParams.get('strategy');
-    }
-    if (urlParams.get('theme')) {
-        document.getElementById('theme').value = urlParams.get('theme');
-    }
 
-    // URL パラメータがある場合は自動実行
+    if (urlParams.get('region'))   document.getElementById('region').value   = urlParams.get('region');
+    if (urlParams.get('strategy')) document.getElementById('strategy').value = urlParams.get('strategy');
+    if (urlParams.get('theme'))    document.getElementById('theme').value    = urlParams.get('theme');
+
     if (urlParams.get('strategy')) {
         document.getElementById('screening-form').requestSubmit();
     }
+
+    // Desktop: keep details open by default
+    if (window.innerWidth >= 768) {
+        document.getElementById('filter-details').open = true;
+    }
 });
 
-// プリセット適用
-function applyPreset(presetName) {
+function applyPreset(name) {
     const presets = {
-        'japan_value': { region: 'japan', strategy: 'value', max_pe: '15', max_pb: '1.5' },
-        'japan_dividend': { region: 'japan', strategy: 'high-dividend', min_dividend_yield: '3' },
-        'us_growth': { region: 'us', strategy: 'growth', min_market_cap: '10000' },
-        'us_dividend': { region: 'us', strategy: 'high-dividend', min_dividend_yield: '3' }
+        japan_value:    { region:'japan', strategy:'value',         max_pe:'15', max_pb:'1.5' },
+        japan_dividend: { region:'japan', strategy:'high-dividend', min_dividend_yield:'3' },
+        us_growth:      { region:'us',    strategy:'growth',        min_market_cap:'10000' },
+        us_dividend:    { region:'us',    strategy:'high-dividend', min_dividend_yield:'3' }
     };
-
-    const preset = presets[presetName];
-    if (!preset) return;
-
-    for (const [key, value] of Object.entries(preset)) {
-        const element = document.getElementById(key);
-        if (element) {
-            element.value = value;
-        }
-    }
-
+    const p = presets[name];
+    if (!p) return;
+    Object.entries(p).forEach(([k, v]) => {
+        const el = document.getElementById(k);
+        if (el) el.value = v;
+    });
+    document.getElementById('filter-details').open = true;
     document.getElementById('screening-form').requestSubmit();
 }
 
-// CSV エクスポート
 function exportToCSV() {
     const table = document.querySelector('#results table');
-    if (!table) {
-        alert('エクスポートする結果がありません');
-        return;
-    }
-
-    let csv = [];
+    if (!table) { alert('エクスポートする結果がありません'); return; }
     const rows = table.querySelectorAll('tr');
-
+    const csv = [];
     rows.forEach(row => {
         const cols = row.querySelectorAll('td, th');
-        const csvRow = [];
-        cols.forEach(col => {
-            csvRow.push('"' + col.textContent.trim().replace(/"/g, '""') + '"');
-        });
-        csv.push(csvRow.join(','));
+        csv.push([...cols].map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(','));
     });
-
-    const blob = new Blob(['\ufeff' + csv.join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob(['﻿' + csv.join('\n')], { type:'text/csv' });
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'screening_results_' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'screening_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
-    URL.revokeObjectURL(url);
 }
 
-// ウォッチリストに追加
 async function addToWatchlist() {
     const table = document.querySelector('#results table');
-    if (!table) {
-        alert('追加する結果がありません');
-        return;
-    }
-
-    const tickers = [];
-    const rows = table.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-        const ticker = row.querySelector('td:first-child')?.textContent.trim();
-        if (ticker) {
-            tickers.push(ticker);
-        }
-    });
-
-    if (tickers.length === 0) {
-        alert('追加する銘柄がありません');
-        return;
-    }
-
-    const listName = prompt('ウォッチリスト名を入力してください（新規作成されます）:', 'スクリーニング結果');
+    if (!table) { alert('追加する結果がありません'); return; }
+    const tickers = [...table.querySelectorAll('tbody tr')]
+        .map(r => r.querySelector('td')?.textContent.trim()).filter(Boolean);
+    if (!tickers.length) { alert('追加する銘柄がありません'); return; }
+    const listName = prompt('ウォッチリスト名:', 'スクリーニング結果');
     if (!listName) return;
-
-    try {
-        const response = await fetch('/api/watchlist', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                action: 'add',
-                list_name: listName,
-                tickers: tickers
-            })
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            alert(`${tickers.length}銘柄を「${listName}」に追加しました`);
-        } else {
-            alert('エラー：' + JSON.stringify(data));
-        }
-    } catch (error) {
-        alert('エラー：' + error.message);
-    }
+    const res = await fetch('/api/watchlist', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'add', list_name:listName, tickers })
+    });
+    const data = await res.json();
+    alert(data.success ? `${tickers.length}銘柄を「${listName}」に追加しました` : 'エラー: ' + JSON.stringify(data));
 }
 
-// HTMX イベントリスナー
 document.body.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.detail.target.id === 'results') {
-        const resultInfo = document.getElementById('result-info');
         const table = document.querySelector('#results table');
-        
+        const el = document.getElementById('result-info');
         if (table) {
-            const count = table.querySelectorAll('tbody tr').length;
-            resultInfo.textContent = `${count}銘柄が見つかりました`;
+            const n = table.querySelectorAll('tbody tr').length;
+            el.textContent = n + '銘柄';
         } else {
-            resultInfo.textContent = '';
+            el.textContent = '';
         }
     }
 });

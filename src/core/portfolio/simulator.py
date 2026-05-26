@@ -8,6 +8,7 @@ and dividend reinvestment.
 from typing import Optional, Union
 
 from src.core.models import SimulationResult, YearlySnapshot
+from src.core.portfolio.monte_carlo import run_monte_carlo_simulation, get_monte_carlo_summary
 
 
 def simulate_portfolio(
@@ -19,34 +20,18 @@ def simulate_portfolio(
     reinvest_dividends: bool = True,
     target: Optional[float] = None,
 ) -> SimulationResult:
-    """Run compound interest simulation for 3 scenarios.
-
-    Parameters
-    ----------
-    current_value : float
-        Current portfolio value in JPY.
-    returns : dict
-        {"optimistic": float|None, "base": float|None, "pessimistic": float|None}
-    dividend_yield : float
-        Portfolio weighted-average dividend yield (e.g. 0.026).
-    years : int
-        Number of years to simulate.
-    monthly_add : float
-        Monthly contribution in JPY.
-    reinvest_dividends : bool
-        Whether to reinvest dividends.
-    target : float or None
-        Target amount in JPY.
-
-    Returns
-    -------
-    SimulationResult
+    """Run compound interest simulation for 3 scenarios + Monte Carlo.
+    ...
     """
     base_return = returns.get("base")
+    volatility = returns.get("annualized_volatility") or 0.15  # Default 15% if unknown
 
     # If base return is None, simulation is not possible
     if base_return is None:
         return SimulationResult.empty()
+
+    # --- 1. Traditional 3-Scenario Simulation ---
+    # (rest of existing loop logic ...)
 
     # Build scenarios (skip if return is None)
     scenario_keys = ["optimistic", "base", "pessimistic"]
@@ -138,8 +123,27 @@ def simulate_portfolio(
         monthly_add=monthly_add,
     )
 
+    # --- 2. Monte Carlo Simulation (KIK-579) ---
+    mc_raw = run_monte_carlo_simulation(
+        current_value=current_value,
+        mean_return=base_return,
+        volatility=volatility,
+        dividend_yield=dividend_yield,
+        years=years,
+        monthly_add=monthly_add,
+        reinvest_dividends=reinvest_dividends,
+    )
+    mc_summary = get_monte_carlo_summary(mc_raw)
+    
+    # Store percentiles for display, but exclude full paths array to keep result size manageable
+    mc_result = {
+        "summary": mc_summary,
+        "percentiles": {k: v.tolist() for k, v in mc_raw["percentiles"].items()}
+    }
+
     return SimulationResult(
         scenarios=scenarios,
+        monte_carlo=mc_result,
         target=target,
         target_year_base=target_year_base,
         target_year_optimistic=target_year_optimistic,

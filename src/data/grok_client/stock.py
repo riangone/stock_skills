@@ -202,3 +202,33 @@ def search_stock_deep(
         result["competitive_notes"] = parsed["competitive_notes"]
 
     return result
+
+
+def generate_trade_review(
+    symbol: str,
+    trade_info: dict,
+    thesis: str = "",
+    timeout: int = 30,
+) -> str:
+    """Generate an AI review of a trade by comparing outcome vs thesis."""
+    pnl_rate = trade_info.get("pnl_rate", 0)
+    pnl_str = f"{pnl_rate*100:.1f}%"
+    hold_days = trade_info.get("hold_days", "不明")
+    
+    prompt = (
+        f"Analyze the following investment outcome for {symbol}:\n\n"
+        f"Original Thesis: {thesis if thesis else 'No thesis recorded'}\n"
+        f"Trade Type: {trade_info.get('trade_type', 'sell')}\n"
+        f"P&L: {pnl_str}\n"
+        f"Hold Period: {hold_days} days\n\n"
+        f"Please provide a critical review (Decision Review). "
+        f"Did the outcome match the thesis? Was it luck or skill? "
+        f"What should be learned for next time?\n"
+        f"Respond in a concise, professional tone."
+    )
+    
+    if _is_japanese_stock(symbol):
+        prompt += "\n日本語で回答してください。"
+
+    review = _call_grok_api(prompt, timeout)
+    return review or "AI review unavailable."

@@ -38,7 +38,9 @@ from src.data.yahoo_client.detail import (  # noqa: F401
     _try_get_history,
     _build_dividend_history_from_actions,
     get_stock_info,
+    async_get_stock_info,
     get_multiple_stocks,
+    async_get_multiple_stocks,
     get_stock_detail,
 )
 
@@ -68,7 +70,9 @@ __all__ = [
     "MACRO_TICKERS",
     # Public functions
     "get_stock_info",
+    "async_get_stock_info",
     "get_multiple_stocks",
+    "async_get_multiple_stocks",
     "get_stock_detail",
     "screen_stocks",
     "get_price_history",
